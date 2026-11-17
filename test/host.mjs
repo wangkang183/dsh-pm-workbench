@@ -9,6 +9,9 @@ process.env.DSH_HOME = home;
 
 const { apply, inject } = await import('../index.js');
 assert.deepEqual(inject, ['webServer']);
+const { advanceDailyMemos, normalizeMemo } = await import('../store.js');
+const { mailToMemoDraft } = await import('../inbox.js');
+const { getInboxStatus, saveInboxConfig } = await import('../inbox.js');
 
 const handlers = {};
 const streamCalls = [];
@@ -59,6 +62,7 @@ const ctx = {
 apply(ctx);
 assert.equal(typeof handlers['/pm-workbench/ai'], 'function', 'AI route registered');
 assert.equal(typeof handlers['/pm-workbench/data'], 'function', 'data route registered');
+assert.equal(typeof handlers['/pm-workbench/inbox'], 'function', 'inbox route registered');
 
 function request(method, payload) {
   const req = new EventEmitter();
@@ -94,6 +98,13 @@ assert.equal(health.status, 200);
 assert.equal(health.json.ok, true);
 assert.equal(health.json.route.provider, 'fake-provider');
 
+const inboxStatusRoute = await call('/pm-workbench/inbox', 'GET');
+assert.equal(inboxStatusRoute.status, 200);
+assert.equal(inboxStatusRoute.json.configured, false);
+const inboxSyncRoute = await call('/pm-workbench/inbox', 'POST', { action: 'sync' });
+assert.equal(inboxSyncRoute.status, 400);
+assert.match(inboxSyncRoute.json.error, /还没有配置/);
+
 const summary = await call('/pm-workbench/ai', 'POST', {
   task: 'summary',
   weekStart: '2026-11-16',
@@ -127,13 +138,14 @@ const empty = await call('/pm-workbench/data', 'GET');
 assert.equal(empty.status, 200);
 assert.equal(empty.json.rev, 0);
 assert.deepEqual(empty.json.store.memos, []);
-assert.deepEqual(empty.json.store.tagOptions, ['重要', '不重要', '紧急', '想法', '会议', '客户']);
+assert.deepEqual(empty.json.store.tagOptions, ['重要', '不重要', '紧急', '想法', '会议', '客户', '项目']);
 
 const store = {
   v: 2,
   memos: [{
     id: 'm_test',
     text: '明天下午三点跟设计对齐',
+    note: '带上会员改版验收标准',
     tags: ['重要'],
     done: false,
     dueDate: '2026-11-18',
@@ -141,6 +153,21 @@ const store = {
     createdAt: '2026-11-17T01:00:00.000Z',
   }],
   events: [],
+  projects: [{
+    id: 'p_test',
+    name: '全球搜方案',
+    owner: '我',
+    role: '产品',
+    tasks: [{
+      id: 't_test',
+      title: '竞品调研',
+      owner: '我',
+      role: '产品',
+      dueDate: '2026-11-20',
+      progress: 30,
+      dependsOn: [],
+    }],
+  }],
   reports: {},
   tagOptions: ['重要', '自检'],
   ui: { tab: 'memos', filter: 'all' },
@@ -155,13 +182,59 @@ assert.equal(loaded.json.rev, 1);
 assert.equal(loaded.json.store.memos.length, 1);
 assert.equal(loaded.json.store.memos[0].id, 'm_test');
 assert.equal(loaded.json.store.memos[0].dueTime, '15:00');
+assert.equal(loaded.json.store.memos[0].note, '带上会员改版验收标准');
 assert.deepEqual(loaded.json.store.tagOptions, ['重要', '自检']);
+assert.equal(loaded.json.store.projects.length, 1);
+assert.equal(loaded.json.store.projects[0].id, 'p_test');
+assert.equal(loaded.json.store.projects[0].tasks[0].progress, 30);
+
+const mailDraft = mailToMemoDraft({
+  subject: '周会材料',
+  from: '小王 <wang@example.com>',
+  date: '2026-11-17T06:00:00.000Z',
+  text: '请把本周的验收标准发我。',
+});
+assert.equal(mailDraft.text, '周会材料');
+assert.ok(mailDraft.note.includes('小王'));
+assert.ok(mailDraft.note.includes('验收标准'));
+assert.deepEqual(mailDraft.tags, ['邮件']);
+const inboxStatus = await getInboxStatus(ctx);
+assert.equal(inboxStatus.configured, false);
+await assert.rejects(() => saveInboxConfig(ctx, { email: 'bad', authCode: '123456' }), /邮箱地址/);
 
 const conflict = await call('/pm-workbench/data', 'POST', { store, baseRev: 0 });
 assert.equal(conflict.status, 409);
 assert.equal(conflict.json.code, 'conflict');
 assert.equal(conflict.json.rev, 1);
 assert.equal(conflict.json.store.memos.length, 1);
+
+const dailyNow = new Date(2026, 10, 17, 9, 0, 0);
+const dailyOpen = normalizeMemo({
+  id: 'd_open',
+  text: '每日站会',
+  dueDate: '2026-11-16',
+  repeat: 'daily',
+  seriesId: 's_open',
+});
+const dailyRoll = advanceDailyMemos([dailyOpen], dailyNow);
+assert.equal(dailyRoll.changed, true);
+assert.equal(dailyRoll.memos[0].id, 'd_open');
+assert.equal(dailyRoll.memos[0].dueDate, '2026-11-17');
+
+const dailyDone = normalizeMemo({
+  id: 'd_done',
+  text: '每日复盘',
+  dueDate: '2026-11-16',
+  repeat: 'daily',
+  seriesId: 's_done',
+  done: true,
+  doneAt: '2026-11-16T10:00:00.000Z',
+});
+const dailyNext = advanceDailyMemos([dailyDone], dailyNow);
+assert.equal(dailyNext.memos.length, 2);
+assert.equal(dailyNext.memos[0].id !== 'd_done', true);
+assert.equal(dailyNext.memos[0].dueDate, '2026-11-17');
+assert.equal(dailyNext.memos.find((memo) => memo.id === 'd_done').repeat, null);
 
 console.log('host tests: ok');
 rmSync(home, { recursive: true, force: true });

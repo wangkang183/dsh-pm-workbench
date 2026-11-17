@@ -16,7 +16,8 @@ assert.ok(api, 'hook not called');
 const {
   parseCapture, parseDue, groupMemos, weekRange, weekStats, dayEntries,
   localParseText, localSummary, migrateLegacy, normalizeMemo, sanitizeParseResult,
-  isBulkDraft, buildMemoPrompt,
+  isBulkDraft, buildMemoPrompt, advanceDailyMemos, normalizeProject, normalizeProjectTask, projectProgress, reorderTaskList,
+  dependencyConflicts, repairDependencyDates,
   ymd, addDays, startOfWeek,
 } = api;
 
@@ -93,6 +94,65 @@ assert.ok(prompt.includes('今天 15:00'));
 const nm = normalizeMemo({ text: 'x', dueTime: '15:00' });
 assert.equal(nm.dueDate, null);
 assert.equal(nm.dueTime, null);
+const nmNote = normalizeMemo({ text: 'x', note: '第一行\n第二行' });
+assert.equal(nmNote.note, '第一行\n第二行');
+
+// --- daily recurrence -----------------------------------------------------
+const dailyOpen = normalizeMemo({
+  id: 'd1', text: '每日站会', dueDate: '2026-11-16', repeat: 'daily', seriesId: 's1',
+});
+const rollOpen = advanceDailyMemos([dailyOpen], now);
+assert.equal(rollOpen.changed, true);
+assert.equal(rollOpen.memos.length, 1, 'unfinished daily task rolls in place');
+assert.equal(rollOpen.memos[0].id, 'd1');
+assert.equal(rollOpen.memos[0].dueDate, T);
+assert.equal(rollOpen.memos[0].repeat, 'daily');
+
+const dailyDone = normalizeMemo({
+  id: 'd2', text: '每日复盘', dueDate: '2026-11-16', repeat: 'daily', seriesId: 's2', done: true,
+  doneAt: '2026-11-16T10:00:00.000Z',
+});
+const rollDone = advanceDailyMemos([dailyDone], now);
+assert.equal(rollDone.changed, true);
+assert.equal(rollDone.memos.length, 2, 'finished daily task creates tomorrow copy');
+assert.equal(rollDone.memos[0].id !== 'd2', true);
+assert.equal(rollDone.memos[0].dueDate, T);
+assert.equal(rollDone.memos[0].repeat, 'daily');
+assert.equal(rollDone.memos.find((memo) => memo.id === 'd2').repeat, null);
+
+const active = normalizeMemo({
+  id: 'd3', text: '每天喝水', dueDate: T, repeat: 'daily', seriesId: 's3',
+});
+const oldDone = normalizeMemo({
+  id: 'd4', text: '每天喝水', dueDate: '2026-11-16', repeat: 'daily', seriesId: 's3', done: true,
+  doneAt: '2026-11-16T10:00:00.000Z',
+});
+const rollDup = advanceDailyMemos([oldDone, active], now);
+assert.equal(rollDup.memos.length, 2, 'does not duplicate an already-created daily task');
+assert.equal(rollDup.memos.find((memo) => memo.id === 'd3').repeat, 'daily');
+assert.equal(rollDup.memos.find((memo) => memo.id === 'd4').repeat, null);
+
+const project = normalizeProject({
+  name: '全球搜方案',
+  owner: '我',
+  role: '产品',
+  startDate: '2026-11-17',
+  dueDate: '2026-11-30',
+  tasks: [
+    { id: 't1', title: '竞品调研', progress: 40, dueDate: '2026-11-20' },
+    { id: 't2', title: '方案初稿', startDate: '2026-11-20', progress: 60, dueDate: '2026-11-25', dependsOn: ['t1'] },
+  ],
+});
+assert.equal(project.tasks.length, 2);
+assert.deepEqual(project.tasks[1].dependsOn, ['t1']);
+assert.equal(projectProgress(project), 50);
+assert.deepEqual(reorderTaskList(project.tasks, 't2', 't1').map((task) => task.id), ['t2', 't1']);
+assert.deepEqual(reorderTaskList(project.tasks, 't1', 't2').map((task) => task.id), ['t2', 't1']);
+assert.equal(dependencyConflicts(project).length, 1, 't2 starts on t1 due date');
+const repaired = repairDependencyDates(project);
+assert.equal(repaired.tasks[1].startDate, '2026-11-21');
+assert.equal(repaired.tasks[1].dueDate, '2026-11-26');
+assert.equal(dependencyConflicts(repaired).length, 0);
 
 // --- groupMemos -----------------------------------------------------------
 const iso = (date, hour = 9) => new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour).toISOString();
@@ -148,6 +208,13 @@ assert.equal(day.length, 3);
 assert.equal(day[0].title, 'event morning');
 assert.equal(day[1].title, 'memo due');
 assert.equal(day[2].title, 'event all day');
+
+const taskDay = dayEntries([], [], '2026-11-20', [project]);
+assert.equal(taskDay.length, 1);
+assert.equal(taskDay[0].kind, 'task');
+assert.equal(taskDay[0].title, '竞品调研');
+assert.equal(taskDay[0].projectName, '全球搜方案');
+assert.equal(taskDay[0].progress, 40);
 
 // --- local parser / local summary ---------------------------------------
 const parsed = localParseText('明天下午3点和设计评审\n整理竞品定价页', now);
