@@ -498,7 +498,7 @@ window.__ModuleLoader__.load({
   background:var(--pmw-surface-2);color:var(--pmw-muted);font-size:10px;font-weight:700;white-space:nowrap}
 .pmw-due.is-today{color:var(--pmw-primary);background:var(--pmw-primary-faint)}
 .pmw-due.is-danger{color:var(--pmw-danger);background:rgba(179,38,30,.07)}
-.pmw-memo.is-drawer{border-color:rgba(98,0,238,.34);box-shadow:0 8px 24px rgba(98,0,238,.12);min-height:96px}
+.pmw-memo.is-drawer{border-color:rgba(98,0,238,.34);box-shadow:0 8px 24px rgba(98,0,238,.12);min-height:96px;z-index:6}
 .pmw-memo-drawer{position:absolute;top:0;right:0;bottom:0;width:86px;padding:8px;display:flex;flex-direction:column;
   align-items:stretch;justify-content:center;gap:4px;background:var(--pmw-surface);border-left:1px solid var(--pmw-line);
   border-radius:0 16px 16px 0;box-shadow:-10px 0 24px rgba(28,20,50,.08);z-index:4;
