@@ -26,13 +26,104 @@ window.__ModuleLoader__.load({
     const DATA_ROUTE = '/pm-workbench/data';
     const DAY = 86400000;
     const BULK_MIN_CHARS = 50;
-    const DEFAULT_TAGS = ['重要', '不重要', '紧急', '想法', '会议', '客户'];
+    const DEFAULT_TAGS = ['重要', '不重要', '紧急', '想法', '会议', '客户', '项目'];
 
     /* ------------------------------------------------------------------ i18n */
 
     const ZH = {
       title: '工作台',
       tab_memos: '备忘',
+      tab_projects: '项目',
+      tab_inbox: '收件箱',
+      inbox_title: '收件箱',
+      inbox_setup_title: '连接 QQ 邮箱',
+      inbox_setup_desc: '工作台只读收信，不会修改邮箱。启用 QQ 邮箱的 IMAP 服务后，用授权码连接。',
+      inbox_email: 'QQ 邮箱地址',
+      inbox_auth: '授权码',
+      inbox_auth_ph: 'QQ 邮箱设置里生成的授权码，不是登录密码',
+      inbox_connect: '连接邮箱',
+      inbox_connecting: '正在连接…',
+      inbox_help: 'QQ 邮箱 → 设置 → 账户 → 开启 IMAP → 生成授权码',
+      inbox_sync: '同步邮件',
+      inbox_syncing: '同步中…',
+      inbox_empty: '没有邮件',
+      inbox_readonly: '只读收信，不会修改邮箱',
+      inbox_last_sync: '上次同步 {time}',
+      inbox_from: '发件人',
+      inbox_add_todo: '加入待办',
+      inbox_added: '已加入待办',
+      inbox_open_memo: '查看',
+      inbox_disconnect: '断开邮箱',
+      inbox_disconnect_confirm: '断开 QQ 邮箱配置？',
+      inbox_back: '返回列表',
+      inbox_guide: '接入信息渠道，邮件一键变待办',
+      inbox_guide_action: '去配置',
+      inbox_not_configured: '还没有连接邮箱',
+      inbox_error: '连接失败：{message}',
+      inbox_required: '请填写邮箱地址和授权码',
+      inbox_settings: '邮箱设置',
+      inbox_unread: '未读',
+      inbox_messages: '{n} 封邮件',
+      inbox_channels_count: '{n} 个渠道',
+      inbox_sync_at: '同步于 {time}',
+      inbox_hub_sub: '邮件和消息，都收进一个地方',
+      inbox_all: '全部',
+      inbox_channels: '信息渠道',
+      inbox_add_channel: '添加渠道',
+      inbox_connected: '已连接',
+      inbox_not_connected: '未连接',
+      inbox_soon: '即将支持',
+      inbox_channel_qq: 'QQ 邮箱',
+      inbox_channel_qq_desc: '收邮件 · 只读',
+      inbox_channel_wechat: '微信',
+      inbox_channel_wechat_desc: '聊天消息',
+      inbox_channel_dingtalk: '钉钉',
+      inbox_channel_dingtalk_desc: '消息与待办',
+      inbox_channel_feishu: '飞书',
+      inbox_channel_feishu_desc: '消息与文档',
+      inbox_channel_web: 'RSS / 网页',
+      inbox_channel_web_desc: '订阅与资讯',
+      inbox_hub_empty: '还没有接入渠道',
+      inbox_hub_empty_desc: '先连接 QQ 邮箱；后续会支持微信、钉钉、飞书和网页信息源。',
+      inbox_pick_channel: '接入信息渠道',
+      inbox_pick_channel_desc: '目前支持 QQ 邮箱；更多渠道后续接入。',
+      inbox_source: '来源',
+      project_new: '新增项目',
+      project_new_task: '新增任务',
+      project_name: '项目名称',
+      project_desc: '描述（可选）',
+      project_owner: '负责人',
+      project_role: '岗位（可选）',
+      project_start: '开始日期',
+      project_due: '截止日期',
+      project_tasks: '{n} 个任务',
+      project_progress: '项目进度 {n}%',
+      project_empty: '这个项目还没有任务',
+      project_no_projects: '还没有项目',
+      project_first: '先新增一个项目，再在项目里添加任务。',
+      project_task_title: '任务名称',
+      task_owner: '负责人（默认自己）',
+      task_role: '岗位（可选）',
+      task_start: '开始',
+      task_due: '截止',
+      task_progress: '进度',
+      task_depends: '前置任务',
+      task_depends_hint: '可多选；表示要等这些任务完成',
+      task_self: '我',
+      project_save: '保存项目',
+      task_save: '保存任务',
+      project_created: '项目已创建',
+      task_saved: '任务已保存',
+      project_memo: '新建项目',
+      project_convert: '转为项目',
+      project_open: '打开项目',
+      project_linked: '项目',
+      project_converted: '已转为项目并加入任务',
+      gantt_task: '任务',
+      gantt_drag_hint: '拖动左侧 ⠿ 调整任务顺序',
+      deps_conflict: '{n} 个依赖日期冲突',
+      deps_fix: '按依赖顺延',
+      deps_repaired: '已按依赖顺延',
       tab_calendar: '日历',
       tab_weekly: '周报',
       composer_ph: '记点什么… 明天 15:00 对齐 #重要',
@@ -79,6 +170,7 @@ window.__ModuleLoader__.load({
       tag_idea: '想法',
       tag_meeting: '会议',
       tag_client: '客户',
+      tag_project: '项目',
       manage_tags: '管理标签',
       tag_manage_hint: '新增、重命名或删除标签；重命名会同步所有待办，删除会从所有待办中移除。',
       tag_new_ph: '输入新标签',
@@ -159,6 +251,8 @@ window.__ModuleLoader__.load({
       unpin: '取消置顶',
       edit: '编辑',
       note_ph: '备注（可选）',
+      repeat_daily: '每天重复',
+      repeat_short: '每天',
       cancel: '取消',
       delete: '删除',
       due_label: '截止日期',
@@ -188,6 +282,97 @@ window.__ModuleLoader__.load({
     const EN = {
       title: 'Workbench',
       tab_memos: 'Memos',
+      tab_projects: 'Projects',
+      tab_inbox: 'Inbox',
+      inbox_title: 'Inbox',
+      inbox_setup_title: 'Connect QQ Mail',
+      inbox_setup_desc: 'Read-only inbox. Enable IMAP in QQ Mail and connect with an authorization code; mail can be added to a memo in one click.',
+      inbox_email: 'QQ Mail address',
+      inbox_auth: 'Authorization code',
+      inbox_auth_ph: 'The code generated in QQ Mail settings, not your login password',
+      inbox_connect: 'Connect mailbox',
+      inbox_connecting: 'Connecting…',
+      inbox_help: 'QQ Mail → Settings → Account → Enable IMAP → Generate authorization code',
+      inbox_sync: 'Sync mail',
+      inbox_syncing: 'Syncing…',
+      inbox_empty: 'No mail',
+      inbox_readonly: 'Read-only: your mailbox is never modified',
+      inbox_last_sync: 'Last sync {time}',
+      inbox_from: 'From',
+      inbox_add_todo: 'Add to memo',
+      inbox_added: 'Added to memo',
+      inbox_open_memo: 'View',
+      inbox_disconnect: 'Disconnect mailbox',
+      inbox_disconnect_confirm: 'Disconnect the QQ Mail configuration?',
+      inbox_back: 'Back to list',
+      inbox_guide: 'Connect information channels; turn mail into memos',
+      inbox_guide_action: 'Set up',
+      inbox_not_configured: 'No mailbox connected',
+      inbox_error: 'Connection failed: {message}',
+      inbox_required: 'Enter the mailbox address and authorization code',
+      inbox_settings: 'Mailbox settings',
+      inbox_unread: 'Unread',
+      inbox_messages: '{n} messages',
+      inbox_channels_count: '{n} channels',
+      inbox_sync_at: 'Synced {time}',
+      inbox_hub_sub: 'Mail and messages, gathered in one place',
+      inbox_all: 'All',
+      inbox_channels: 'Channels',
+      inbox_add_channel: 'Add channel',
+      inbox_connected: 'Connected',
+      inbox_not_connected: 'Not connected',
+      inbox_soon: 'Coming soon',
+      inbox_channel_qq: 'QQ Mail',
+      inbox_channel_qq_desc: 'Mail · read-only',
+      inbox_channel_wechat: 'WeChat',
+      inbox_channel_wechat_desc: 'Chat messages',
+      inbox_channel_dingtalk: 'DingTalk',
+      inbox_channel_dingtalk_desc: 'Messages and todos',
+      inbox_channel_feishu: 'Feishu',
+      inbox_channel_feishu_desc: 'Messages and docs',
+      inbox_channel_web: 'RSS / Web',
+      inbox_channel_web_desc: 'Feeds and updates',
+      inbox_hub_empty: 'No channels connected',
+      inbox_hub_empty_desc: 'Connect QQ Mail first; WeChat, DingTalk, Feishu and web feeds will follow.',
+      inbox_pick_channel: 'Add an information channel',
+      inbox_pick_channel_desc: 'QQ Mail is available now; more channels are coming.',
+      inbox_source: 'Source',
+      project_new: 'New project',
+      project_new_task: 'New task',
+      project_name: 'Project name',
+      project_desc: 'Description (optional)',
+      project_owner: 'Owner',
+      project_role: 'Role (optional)',
+      project_start: 'Start date',
+      project_due: 'Due date',
+      project_tasks: '{n} tasks',
+      project_progress: 'Project progress {n}%',
+      project_empty: 'No tasks in this project yet',
+      project_no_projects: 'No projects yet',
+      project_first: 'Create a project, then add tasks inside it.',
+      project_task_title: 'Task name',
+      task_owner: 'Owner (defaults to me)',
+      task_role: 'Role (optional)',
+      task_start: 'Start',
+      task_due: 'Due',
+      task_progress: 'Progress',
+      task_depends: 'Depends on',
+      task_depends_hint: 'Select any tasks that must finish first',
+      task_self: 'Me',
+      project_save: 'Save project',
+      task_save: 'Save task',
+      project_created: 'Project created',
+      task_saved: 'Task saved',
+      project_memo: 'New project',
+      project_convert: 'Convert to project',
+      project_open: 'Open project',
+      project_linked: 'Project',
+      project_converted: 'Converted to a project and added a task',
+      gantt_task: 'Task',
+      gantt_drag_hint: 'Drag ⠿ on the left to reorder tasks',
+      deps_conflict: '{n} dependency date conflict(s)',
+      deps_fix: 'Shift by dependencies',
+      deps_repaired: 'Dependency dates shifted',
       tab_calendar: 'Calendar',
       tab_weekly: 'Weekly',
       composer_ph: 'Jot it down… tomorrow 3pm sync #important',
@@ -234,6 +419,7 @@ window.__ModuleLoader__.load({
       tag_idea: 'Idea',
       tag_meeting: 'Meeting',
       tag_client: 'Client',
+      tag_project: 'Project',
       manage_tags: 'Manage tags',
       tag_manage_hint: 'Add, rename, or delete tags. Renaming updates every memo; deleting removes the tag from every memo.',
       tag_new_ph: 'New tag',
@@ -314,6 +500,8 @@ window.__ModuleLoader__.load({
       unpin: 'Unpin',
       edit: 'Edit',
       note_ph: 'Note (optional)',
+      repeat_daily: 'Repeat daily',
+      repeat_short: 'Daily',
       cancel: 'Cancel',
       delete: 'Delete',
       due_label: 'Due date',
@@ -412,8 +600,9 @@ window.__ModuleLoader__.load({
   font-size:10px;font-weight:700;line-height:1.1;color:#fff}
 .pmw-ring-label small{font-size:8px;font-weight:600;opacity:.72;letter-spacing:.04em}
 .pmw-tabs{display:flex;flex:0 0 auto;gap:2px;padding:0 8px;background:var(--pmw-surface);border-bottom:1px solid var(--pmw-line)}
-.pmw-tab{flex:1 1 0;position:relative;display:flex;align-items:center;justify-content:center;gap:6px;height:45px;
-  border:0;background:transparent;color:var(--pmw-muted);font-size:12px;font-weight:600;cursor:pointer;
+.pmw-tab{flex:1 1 0;position:relative;display:flex;align-items:center;justify-content:center;gap:4px;height:45px;
+  padding:0 2px;font-size:11px;
+  border:0;background:transparent;color:var(--pmw-muted);font-size:11px;font-weight:600;cursor:pointer;
   border-radius:12px 12px 0 0;transition:color .18s,background .18s}
 .pmw-tab:hover{background:var(--pmw-primary-faint);color:var(--pmw-ink)}
 .pmw-tab.is-active{color:var(--pmw-primary)}
@@ -444,6 +633,7 @@ window.__ModuleLoader__.load({
 .pmw-chip:hover{border-color:var(--pmw-line-strong);color:var(--pmw-ink)}
 .pmw-chip.is-on{background:var(--pmw-primary-soft);border-color:rgba(98,0,238,.32);color:var(--pmw-primary)}
 .pmw-chip.is-danger{background:rgba(179,38,30,.08);border-color:rgba(179,38,30,.22);color:var(--pmw-danger)}
+.pmw-chip.is-primary{background:var(--pmw-primary-soft);border-color:rgba(98,0,238,.28);color:var(--pmw-primary)}
 .pmw-chip.is-warn{background:rgba(161,92,0,.08);border-color:rgba(161,92,0,.22);color:var(--pmw-warn)}
 .pmw-chip.is-teal{background:rgba(3,218,198,.12);border-color:rgba(3,218,198,.38);color:var(--pmw-teal-ink)}
 .pmw-chip.is-static{cursor:default}
@@ -498,6 +688,8 @@ window.__ModuleLoader__.load({
   background:var(--pmw-surface-2);color:var(--pmw-muted);font-size:10px;font-weight:700;white-space:nowrap}
 .pmw-due.is-today{color:var(--pmw-primary);background:var(--pmw-primary-faint)}
 .pmw-due.is-danger{color:var(--pmw-danger);background:rgba(179,38,30,.07)}
+.pmw-repeat{display:inline-flex;align-items:center;gap:3px;height:22px;padding:0 7px;border-radius:999px;
+  background:var(--pmw-primary-soft);color:var(--pmw-primary);font-size:10px;font-weight:700;white-space:nowrap}
 .pmw-memo.is-drawer{border-color:rgba(98,0,238,.34);box-shadow:0 8px 24px rgba(98,0,238,.12);min-height:96px;z-index:6}
 .pmw-memo-drawer{position:absolute;top:0;right:0;bottom:0;width:86px;padding:8px;display:flex;flex-direction:column;
   align-items:stretch;justify-content:center;gap:4px;background:var(--pmw-surface);border-left:1px solid var(--pmw-line);
@@ -537,8 +729,159 @@ window.__ModuleLoader__.load({
 .pmw-iconbtn{width:28px;height:28px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--pmw-muted);
   display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .16s,color .16s;flex:0 0 auto}
 .pmw-iconbtn:hover{background:var(--pmw-primary-faint);color:var(--pmw-primary)}
+.pmw-projects{display:flex;flex-direction:column;gap:9px}
+.pmw-project-switch{display:flex;align-items:center;gap:6px}
+.pmw-project-switch select{flex:1 1 auto;min-width:0;height:32px;border:1px solid var(--pmw-line);border-radius:10px;
+  background:var(--pmw-surface);color:var(--pmw-ink);font-size:12px;font-weight:600;padding:0 8px;outline:none;font-family:inherit}
+.pmw-project-card{padding:10px 10px 8px;border:1px solid var(--pmw-line);border-radius:14px;background:var(--pmw-surface);box-shadow:var(--pmw-shadow-1)}
+.pmw-project-title{display:flex;align-items:flex-start;gap:8px}
+.pmw-project-title h3{flex:1 1 auto;min-width:0;margin:0;font-size:14px;line-height:1.35;font-weight:800;color:var(--pmw-ink);word-break:break-word}
+.pmw-project-progress-label{font-size:11px;font-weight:800;color:var(--pmw-primary);white-space:nowrap}
+.pmw-project-desc{margin:5px 0 0;font-size:11.5px;line-height:1.55;color:var(--pmw-muted);white-space:pre-wrap;word-break:break-word}
+.pmw-project-meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;font-size:10px;color:var(--pmw-muted)}
+.pmw-project-meta span{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:6px;background:var(--pmw-surface-2)}
+.pmw-project-bar{height:5px;margin-top:8px;border-radius:999px;background:var(--pmw-surface-2);overflow:hidden}
+.pmw-project-bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--pmw-primary),var(--pmw-primary-light))}
+.pmw-project-empty{margin-top:8px;padding:14px 10px;border:1px dashed var(--pmw-line-strong);border-radius:10px;text-align:center;font-size:11px;color:var(--pmw-muted)}
+.pmw-gantt{margin-top:9px;border:1px solid var(--pmw-line);border-radius:10px;overflow:hidden;background:var(--pmw-surface)}
+.pmw-gantt-scroll{overflow-x:auto;scrollbar-width:thin}
+.pmw-gantt-canvas{position:relative;min-width:100%}
+.pmw-gantt-head{display:flex;height:26px;background:var(--pmw-surface-2);border-bottom:1px solid var(--pmw-line)}
+.pmw-gantt-corner{width:104px;flex:0 0 104px;display:flex;align-items:center;padding:0 8px;font-size:9px;font-weight:800;
+  color:var(--pmw-muted);position:sticky;left:0;z-index:3;background:var(--pmw-surface-2)}
+.pmw-gantt-days{display:flex}
+.pmw-gantt-day{width:28px;flex:0 0 28px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--pmw-muted);
+  border-left:1px solid var(--pmw-line)}
+.pmw-gantt-day.is-weekend{background:rgba(98,0,238,.035)}
+.pmw-gantt-day.is-today{color:var(--pmw-primary);font-weight:800;background:var(--pmw-primary-faint)}
+.pmw-gantt-row{display:flex;height:38px;border-top:1px solid var(--pmw-line)}
+.pmw-gantt-row.is-dragging{opacity:.48}
+.pmw-gantt-row.is-drop{box-shadow:inset 0 2px 0 var(--pmw-primary)}
+.pmw-gantt-grip{flex:0 0 auto;color:var(--pmw-muted);font-size:13px;line-height:1;cursor:grab;user-select:none}
+.pmw-gantt-grip:active{cursor:grabbing}
+.pmw-gantt-label{width:104px;flex:0 0 104px;display:flex;align-items:center;gap:4px;padding:0 6px;
+  border:0;background:var(--pmw-surface);color:var(--pmw-ink);text-align:left;font-family:inherit;cursor:pointer;
+  position:sticky;left:0;z-index:2;border-right:1px solid var(--pmw-line)}
+.pmw-gantt-label-text{display:flex;flex-direction:column;justify-content:center;gap:1px;min-width:0;flex:1 1 auto}
+.pmw-gantt-label b{display:block;max-width:100%;font-size:10px;line-height:1.25;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmw-gantt-label small{display:block;max-width:100%;font-size:9px;line-height:1.2;color:var(--pmw-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmw-gantt-track{position:relative;flex:1 1 auto;min-width:0;background:repeating-linear-gradient(90deg,transparent 0 27px,var(--pmw-line) 27px 28px)}
+.pmw-gantt-today{position:absolute;top:0;bottom:0;width:1px;background:var(--pmw-primary);opacity:.55;pointer-events:none;z-index:1}
+.pmw-gantt-bar{position:absolute;top:9px;height:20px;border:0;border-radius:6px;background:linear-gradient(90deg,var(--pmw-primary-deep),var(--pmw-primary-light));
+  color:#fff;font-size:9px;font-weight:800;font-family:inherit;cursor:pointer;overflow:hidden;white-space:nowrap;padding:0 5px;text-align:left;
+  box-shadow:0 2px 7px rgba(98,0,238,.26);z-index:2}
+.pmw-gantt-bar.is-done{background:linear-gradient(90deg,#0b8f80,var(--pmw-teal));box-shadow:none}
+.pmw-gantt-bar.is-blocked{background:linear-gradient(90deg,#7a6b96,#a093ba);box-shadow:none}
+.pmw-gantt-bar.is-conflict{outline:2px solid var(--pmw-danger);outline-offset:1px}
+.pmw-dep-warning{display:flex;align-items:center;gap:6px;margin-top:7px;padding:6px 8px;border-radius:8px;
+  background:rgba(179,38,30,.06);color:var(--pmw-danger);font-size:10px;font-weight:700}
+.pmw-dep-warning button{margin-left:auto;border:1px solid rgba(179,38,30,.22);border-radius:999px;background:transparent;
+  color:var(--pmw-danger);font-size:9.5px;font-weight:700;padding:3px 7px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.pmw-dep-warning button:hover{background:rgba(179,38,30,.1)}
+.pmw-gantt-svg{position:absolute;left:104px;top:0;pointer-events:none;z-index:3;overflow:visible}
+.pmw-gantt-empty{padding:12px;text-align:center;font-size:11px;color:var(--pmw-muted)}
+.pmw-gantt-hint{margin-top:5px;font-size:9.5px;color:var(--pmw-muted);text-align:right}
+.pmw-project-dock{display:flex;gap:7px;align-items:center}
+.pmw-project-dock .pmw-btn{flex:1 1 auto}
+.pmw-project-linked{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:var(--pmw-primary)}
+.pmw-project-cta{display:inline-flex;align-items:center;gap:3px;height:22px;padding:0 7px;border:1px dashed rgba(98,0,238,.3);
+  border-radius:999px;background:transparent;color:var(--pmw-primary);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit}
+.pmw-project-cta:hover{background:var(--pmw-primary-faint);border-style:solid}
+.pmw-memo.is-project{border-left:3px solid var(--pmw-primary);background:linear-gradient(90deg,var(--pmw-primary-faint),var(--pmw-surface) 34%)}
+.pmw-dependency-list{display:flex;flex-wrap:wrap;gap:5px;max-height:130px;overflow:auto;margin-top:4px}
+.pmw-progress-row{display:flex;align-items:center;gap:8px;margin-top:6px}
+.pmw-progress-row input[type="range"]{flex:1 1 auto;accent-color:var(--pmw-primary)}
+.pmw-progress-row output{font-size:11px;font-weight:800;color:var(--pmw-primary);min-width:34px;text-align:right}
 .pmw-empty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:22px 14px 14px}
-.pmw-empty h4{margin:10px 0 3px;font-size:13px;font-weight:700;color:var(--pmw-ink)}
+.pmw-inbox-guide{display:flex;align-items:center;gap:7px;margin:8px 12px 0;padding:8px 10px;border:1px solid rgba(98,0,238,.16);
+  border-radius:11px;background:var(--pmw-primary-faint);color:var(--pmw-primary);font-size:10.5px;font-weight:600;cursor:pointer;
+  font-family:inherit;text-align:left;flex:0 0 auto}
+.pmw-inbox-guide b{margin-left:auto;white-space:nowrap;font-size:10px}
+.pmw-inbox-guide-close{flex:0 0 auto;border:0;background:transparent;color:var(--pmw-primary);font-size:13px;line-height:1;
+  cursor:pointer;padding:0 1px;font-family:inherit;opacity:.65}
+.pmw-inbox-head{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.pmw-inbox-head-actions{display:flex;align-items:center;gap:2px;flex:0 0 auto}
+.pmw-inbox-head-actions .pmw-iconbtn{width:26px;height:26px}
+.pmw-channel-disconnect{flex:0 0 auto;border:0;background:transparent;color:var(--pmw-danger);font-size:9px;font-weight:700;
+  padding:2px 3px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.pmw-channel-disconnect:hover{text-decoration:underline}
+.pmw-channel-future{margin-top:10px}
+.pmw-channel-future-label{display:block;font-size:9px;font-weight:700;letter-spacing:.03em;color:var(--pmw-muted);margin-bottom:5px}
+.pmw-channel-chip-row{display:flex;flex-wrap:wrap;gap:4px}
+.pmw-channel-chip{display:inline-flex;align-items:center;gap:3px;padding:3px 6px;border:1px dashed var(--pmw-line-strong);
+  border-radius:999px;background:transparent;color:var(--pmw-muted);font-size:9px;font-weight:600}
+.pmw-mail-unread-dot{flex:0 0 5px;width:5px;height:5px;border-radius:50%;background:var(--pmw-primary);box-shadow:0 0 0 2px var(--pmw-primary-faint)}
+.pmw-inbox-head-main{flex:1 1 auto;min-width:0}
+.pmw-inbox-head h3{margin:0;font-size:13px;font-weight:800;color:var(--pmw-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmw-inbox-head small{display:block;margin-top:2px;font-size:9.5px;color:var(--pmw-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmw-inbox-actions{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:7px}
+.pmw-inbox-setup{padding:12px 12px 10px;border:1px solid var(--pmw-line);border-radius:14px;background:var(--pmw-surface);box-shadow:var(--pmw-shadow-1)}
+.pmw-inbox-setup h3{margin:0 0 5px;font-size:13px;font-weight:800;color:var(--pmw-ink)}
+.pmw-inbox-setup-head{display:flex;align-items:center;gap:5px}
+.pmw-inbox-setup-head h3{margin:0 0 3px}
+.pmw-inbox-setup p{margin:0 0 8px;font-size:11px;line-height:1.6;color:var(--pmw-muted)}
+.pmw-inbox-setup .pmw-input{width:100%;height:34px;margin-top:5px}
+.pmw-inbox-setup .pmw-btn{width:100%;margin-top:9px}
+.pmw-inbox-help{margin-top:7px;font-size:9.5px;line-height:1.55;color:var(--pmw-muted)}
+.pmw-inbox-error{margin-top:7px;font-size:10px;line-height:1.5;color:var(--pmw-danger)}
+.pmw-inbox-list{display:flex;flex-direction:column;gap:6px}
+.pmw-mail{position:relative;display:block;width:100%;padding:8px 9px;border:1px solid var(--pmw-line);border-radius:11px;
+  background:var(--pmw-surface);text-align:left;cursor:pointer;font-family:inherit}
+.pmw-mail:hover{border-color:var(--pmw-line-strong);background:var(--pmw-surface-2)}
+.pmw-mail.is-unread{border-left:3px solid var(--pmw-primary)}
+.pmw-mail-top{display:flex;align-items:center;gap:6px;min-width:0}
+.pmw-mail-from{flex:1 1 auto;min-width:0;font-size:10px;font-weight:700;color:var(--pmw-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmw-mail-date{flex:0 0 auto;font-size:9px;color:var(--pmw-muted)}
+.pmw-mail-subject{display:block;margin-top:3px;font-size:12px;font-weight:700;color:var(--pmw-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmw-mail-preview{display:block;margin-top:3px;font-size:10px;line-height:1.45;color:var(--pmw-muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pmw-mail-meta{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:5px}
+.pmw-mail-detail{display:flex;flex-direction:column;gap:8px}
+.pmw-mail-detail-head{border-bottom:1px solid var(--pmw-line);padding-bottom:8px}
+.pmw-mail-detail-head h3{margin:4px 0 0;font-size:14px;line-height:1.4;color:var(--pmw-ink);word-break:break-word}
+.pmw-mail-detail-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px;font-size:10px;color:var(--pmw-muted)}
+.pmw-mail-body{font-size:12px;line-height:1.7;color:var(--pmw-ink);white-space:pre-wrap;word-break:break-word;max-height:360px;overflow:auto;
+  padding:8px 9px;border-radius:10px;background:var(--pmw-surface-2)}
+.pmw-mail-readonly{font-size:9.5px;color:var(--pmw-muted);margin-top:6px}
+.pmw-inbox-hub-head{display:flex;align-items:flex-start;gap:8px;margin-bottom:9px}
+.pmw-inbox-hub-head h3{margin:0;font-size:14px;font-weight:800;color:var(--pmw-ink)}
+.pmw-inbox-hub-head p{margin:3px 0 0;font-size:10px;line-height:1.5;color:var(--pmw-muted)}
+.pmw-inbox-hub-head .pmw-btn{margin-left:auto;flex:0 0 auto}
+.pmw-channel-tabs{display:flex;align-items:center;gap:4px;margin:0 -2px 9px;overflow-x:auto;padding:2px;scrollbar-width:none}
+.pmw-channel-tabs::-webkit-scrollbar{display:none}
+.pmw-channel-tab{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 8px;border:1px solid var(--pmw-line);
+  border-radius:999px;background:var(--pmw-surface);color:var(--pmw-muted);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.pmw-channel-tab.is-active{border-color:var(--pmw-primary);background:var(--pmw-primary-faint);color:var(--pmw-primary)}
+.pmw-channel-tab .pmw-channel-count{font-size:9px;opacity:.7}
+.pmw-channel-add{width:26px;height:26px;flex:0 0 26px;border:1px dashed var(--pmw-line-strong);border-radius:999px;background:transparent;
+  color:var(--pmw-primary);font-size:16px;line-height:1;cursor:pointer;font-family:inherit}
+.pmw-channel-add:hover{background:var(--pmw-primary-faint);border-style:solid}
+.pmw-channel-picker{margin:0 0 9px;padding:9px;border:1px solid var(--pmw-line);border-radius:12px;background:var(--pmw-surface-2)}
+.pmw-channel-picker-head{display:flex;align-items:center;gap:5px;margin-bottom:7px}
+.pmw-channel-picker-head b{flex:1 1 auto;font-size:11px;font-weight:800;color:var(--pmw-ink)}
+.pmw-channel-option{display:flex;align-items:center;gap:8px;width:100%;padding:7px 8px;border:1px solid var(--pmw-line);border-radius:9px;
+  background:var(--pmw-surface);text-align:left;cursor:pointer;font-family:inherit;margin-top:5px}
+.pmw-channel-option:hover{border-color:var(--pmw-line-strong)}
+.pmw-channel-option.is-connected{border-color:rgba(98,0,238,.22)}
+.pmw-channel-option.is-soon{opacity:.55;cursor:default;background:transparent}
+.pmw-channel-option-main{flex:1 1 auto;min-width:0}
+.pmw-channel-option-main b{display:block;font-size:11px;font-weight:700;color:var(--pmw-ink)}
+.pmw-channel-option-main small{display:block;margin-top:1px;font-size:9px;color:var(--pmw-muted)}
+.pmw-channel-badge{flex:0 0 auto;font-size:9px;font-weight:700;color:var(--pmw-primary);background:var(--pmw-primary-faint);
+  border-radius:999px;padding:2px 6px}
+.pmw-channel-badge.is-muted{color:var(--pmw-muted);background:var(--pmw-surface-2)}
+.pmw-channel-note{margin-top:7px;font-size:9px;line-height:1.5;color:var(--pmw-muted)}
+.pmw-channel-cards{display:flex;flex-direction:column;gap:6px}
+.pmw-channel-card{display:flex;align-items:center;gap:8px;width:100%;padding:9px;border:1px solid var(--pmw-line);border-radius:11px;
+  background:var(--pmw-surface);text-align:left;cursor:pointer;font-family:inherit}
+.pmw-channel-card:hover{border-color:rgba(98,0,238,.28)}
+.pmw-channel-card.is-soon{opacity:.55;cursor:default}
+.pmw-channel-card-main{flex:1 1 auto;min-width:0}
+.pmw-channel-card-main b{display:block;font-size:12px;font-weight:700;color:var(--pmw-ink)}
+.pmw-channel-card-main small{display:block;margin-top:1px;font-size:9.5px;color:var(--pmw-muted)}
+.pmw-channel-card .pmw-channel-badge{font-size:9px}
+.pmw-channel-empty{margin-top:10px;padding:14px;border:1px dashed var(--pmw-line-strong);border-radius:12px;text-align:center}
+.pmw-channel-empty h4{margin:6px 0 3px;font-size:12px;font-weight:800;color:var(--pmw-ink)}
+.pmw-channel-empty p{margin:0;font-size:10px;line-height:1.6;color:var(--pmw-muted)}.pmw-empty h4{margin:10px 0 3px;font-size:13px;font-weight:700;color:var(--pmw-ink)}
 .pmw-empty p{margin:0;font-size:11.5px;line-height:1.65;color:var(--pmw-muted);max-width:240px}
 .pmw-dock{position:relative;flex:0 0 auto;padding:9px 12px 12px;background:var(--pmw-bg);border-top:1px solid var(--pmw-line);
   box-shadow:0 -8px 22px rgba(28,20,50,.045)}
@@ -567,6 +910,8 @@ window.__ModuleLoader__.load({
 .pmw-dot{width:4px;height:4px;border-radius:50%;background:var(--pmw-primary)}
 .pmw-cal-cell.is-selected .pmw-dot{background:#fff;opacity:.9}
 .pmw-dot.is-teal{background:var(--pmw-teal)}
+.pmw-dot.is-task{background:#0f9d8a}
+.pmw-dot.is-task-done{opacity:.35}
 .pmw-dot.is-warn{background:var(--pmw-warn)}
 .pmw-agenda{margin-top:14px}
 .pmw-agenda-head{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
@@ -580,6 +925,8 @@ window.__ModuleLoader__.load({
 .pmw-agenda-title{font-size:12px;line-height:1.5;word-break:break-word}
 .pmw-agenda-item.is-done .pmw-agenda-title{text-decoration:line-through;color:var(--pmw-muted)}
 .pmw-agenda-sub{font-size:10px;color:var(--pmw-muted);margin-top:2px;display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.pmw-agenda-project{display:inline-flex;align-items:center;gap:3px;max-width:100%;font-size:9.5px;font-weight:700;color:var(--pmw-primary)}
+.pmw-agenda-progress{font-size:9px;font-weight:600;color:var(--pmw-muted);background:var(--pmw-surface-2);border-radius:999px;padding:1px 5px}
 .pmw-form{margin-top:10px;padding:10px;border:1px solid var(--pmw-line);border-radius:14px;background:var(--pmw-surface-2)}
 .pmw-form-row{display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap}
 .pmw-form-row .pmw-input{flex:1 1 90px}
@@ -627,6 +974,7 @@ window.__ModuleLoader__.load({
 .pmw-sheet-head{display:flex;align-items:center;gap:8px;padding:9px 16px 4px;flex:0 0 auto}
 .pmw-sheet-head h3{margin:0;font-size:14px;font-weight:800;flex:1 1 auto}
 .pmw-sheet-body{padding:6px 16px 18px;overflow-y:auto;min-height:120px}
+.pmw-sheet-label{display:block;margin:9px 0 4px;font-size:10px;font-weight:800;color:var(--pmw-muted);letter-spacing:.03em}
 .pmw-sheet-body textarea{width:100%;min-height:92px;max-height:180px;resize:vertical;border:1px solid var(--pmw-line);
   border-radius:14px;background:var(--pmw-surface-2);color:var(--pmw-ink);font-size:12.5px;line-height:1.65;padding:10px 11px;outline:none}
 .pmw-sheet-body textarea:focus{border-color:var(--pmw-primary);box-shadow:0 0 0 3px var(--pmw-primary-soft)}
@@ -711,6 +1059,22 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       ],
       filter: [h('path', { key: 'a', d: 'M2.4 3.2h11.2l-4.3 4.8v4.9l-2.6 1.5V8z' })],
       chat: [h('path', { key: 'a', d: 'M2.4 3.2h11.2v7.2H8l-3.1 2.4v-2.4H2.4z' })],
+      wechat: [
+        h('path', { key: 'a', d: 'M2.4 3h7.6v5.6H6.2l-2.2 1.8v-1.8H2.4z' }),
+        h('path', { key: 'b', d: 'M7.8 6.2h5.8v4.2h-1.9v1.6l-1.8-1.6H7.8z' }),
+      ],
+      dingtalk: [
+        h('circle', { key: 'a', cx: 8, cy: 8, r: 5.6 }),
+        h('path', { key: 'b', d: 'M5.8 8.4l1.4 1.4 3-3' }),
+      ],
+      feishu: [
+        h('path', { key: 'a', d: 'M3 5.2l5-1.8 5 1.8-5 7.4z' }),
+        h('path', { key: 'b', d: 'M3 5.2l5 2.4 5-2.4M8 7.6v5' }),
+      ],
+      rss: [
+        h('circle', { key: 'a', cx: 4.2, cy: 12, r: 1.2 }),
+        h('path', { key: 'b', d: 'M3.4 8.6a4 4 0 014 4M3.4 4.8a8 8 0 018 8' }),
+      ],
       sparkles: [
         h('path', { key: 'a', d: 'M8 2l1.2 3.1L12.4 6.3 9.2 7.5 8 10.6 6.8 7.5 3.6 6.3 6.8 5.1z' }),
         h('path', { key: 'b', d: 'M12.2 10.4l.5 1.3 1.3.5-1.3.5-.5 1.3-.5-1.3-1.3-.5 1.3-.5z' }),
@@ -724,7 +1088,28 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
         h('path', { key: 'a', d: 'M12.4 7.2a4.4 4.4 0 10-1.1 3.2' }),
         h('path', { key: 'b', d: 'M12.4 3.6v3.6H8.8' }),
       ],
+      repeat: [
+        h('path', { key: 'a', d: 'M4.2 5.4h7.6a2.4 2.4 0 012.4 2.4v.4' }),
+        h('path', { key: 'b', d: 'M6.4 3.2L4.2 5.4l2.2 2.2' }),
+        h('path', { key: 'c', d: 'M11.8 10.6H4.2a2.4 2.4 0 01-2.4-2.4v-.4' }),
+        h('path', { key: 'd', d: 'M9.6 12.8l2.2-2.2-2.2-2.2' }),
+      ],
+      project: [
+        h('rect', { key: 'a', x: 2.4, y: 4.6, width: 4.4, height: 4.4, rx: 1 }),
+        h('rect', { key: 'b', x: 9.2, y: 2.6, width: 4.4, height: 4.4, rx: 1 }),
+        h('rect', { key: 'c', x: 9.2, y: 9.2, width: 4.4, height: 4.4, rx: 1 }),
+        h('path', { key: 'd', d: 'M6.8 6.8h2.4v4.6M9.2 9.2h0' }),
+      ],
+      user: [
+        h('circle', { key: 'a', cx: 8, cy: 5.6, r: 2.5 }),
+        h('path', { key: 'b', d: 'M3.6 12.8c.6-2.2 2.4-3.4 4.4-3.4s3.8 1.2 4.4 3.4' }),
+      ],
+      inbox: [
+        h('path', { key: 'a', d: 'M2.6 9.2l1.8-5.2h7.2l1.8 5.2v3.4H2.6z' }),
+        h('path', { key: 'b', d: 'M2.6 9.2h3.2l.8 1.8h2.8l.8-1.8h3.2' }),
+      ],
       arrow: [h('path', { key: 'a', d: 'M3.2 8h9.2M9 4.4L12.6 8 9 11.6' })],
+      back: [h('path', { key: 'a', d: 'M12.8 8H3.6M7 4.4L3.4 8 7 11.6' })],
       download: [h('path', { key: 'a', d: 'M8 3v7M5.2 7.4L8 10.2l2.8-2.8M3.4 12.6h9.2' })],
       upload: [h('path', { key: 'a', d: 'M8 10.2V3M5.2 5.8L8 3l2.8 2.8M3.4 12.6h9.2' })],
       alert: [
@@ -1124,7 +1509,122 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
     /* ------------------------------------------------------------------- data */
 
     function emptyStore() {
-      return { v: 2, memos: [], events: [], reports: {}, tagOptions: DEFAULT_TAGS.slice(), ui: { tab: 'memos', filter: 'all' } };
+      return { v: 2, memos: [], events: [], reports: {}, projects: [], tagOptions: DEFAULT_TAGS.slice(), ui: { tab: 'memos', filter: 'all' } };
+    }
+
+    function normalizeProjectTask(raw) {
+      if (!raw || typeof raw !== 'object') return null;
+      const title = cleanString(raw.title, 200);
+      if (!title) return null;
+      const progress = Math.max(0, Math.min(100, Math.round(Number(raw.progress) || 0)));
+      const dependsOn = [];
+      for (const entry of safeArray(raw.dependsOn)) {
+        const id = cleanString(entry, 60);
+        if (id && dependsOn.indexOf(id) < 0) dependsOn.push(id);
+        if (dependsOn.length >= 20) break;
+      }
+      return {
+        id: typeof raw.id === 'string' && raw.id ? raw.id : uid('t'),
+        title,
+        owner: cleanString(raw.owner, 60) || '我',
+        role: cleanString(raw.role, 60),
+        startDate: isDateText(raw.startDate) ? raw.startDate : null,
+        dueDate: isDateText(raw.dueDate) ? raw.dueDate : null,
+        progress,
+        dependsOn,
+        createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : new Date().toISOString(),
+        updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : new Date().toISOString(),
+      };
+    }
+
+    function normalizeProject(raw) {
+      if (!raw || typeof raw !== 'object') return null;
+      const name = cleanString(raw.name, 120);
+      if (!name) return null;
+      const tasks = safeArray(raw.tasks).map(normalizeProjectTask).filter(Boolean);
+      return {
+        id: typeof raw.id === 'string' && raw.id ? raw.id : uid('p'),
+        name,
+        description: cleanMultiline(raw.description, 2000),
+        owner: cleanString(raw.owner, 60) || '我',
+        role: cleanString(raw.role, 60),
+        startDate: isDateText(raw.startDate) ? raw.startDate : null,
+        dueDate: isDateText(raw.dueDate) ? raw.dueDate : null,
+        status: raw.status === 'done' ? 'done' : 'active',
+        tasks,
+        createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : new Date().toISOString(),
+        updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : new Date().toISOString(),
+      };
+    }
+
+    function projectProgress(project) {
+      if (!project || !project.tasks.length) return 0;
+      return Math.round(project.tasks.reduce((sum, task) => sum + (Number(task.progress) || 0), 0) / project.tasks.length);
+    }
+
+    function reorderTaskList(tasks, fromId, toId) {
+      const from = tasks.findIndex((task) => task.id === fromId);
+      const to = tasks.findIndex((task) => task.id === toId);
+      if (from < 0 || to < 0 || from === to) return tasks;
+      const next = tasks.slice();
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    }
+
+    function dependencyConflicts(project) {
+      if (!project || !project.tasks) return [];
+      const byId = new Map(project.tasks.map((task) => [task.id, task]));
+      const conflicts = [];
+      for (const task of project.tasks) {
+        for (const dependencyId of task.dependsOn || []) {
+          const dependency = byId.get(dependencyId);
+          if (!dependency || !dependency.dueDate) continue;
+          if (!task.startDate || task.startDate <= dependency.dueDate) {
+            conflicts.push({ taskId: task.id, dependencyId, requiredStart: ymd(addDays(parseYmd(dependency.dueDate), 1)) });
+          }
+        }
+      }
+      return conflicts;
+    }
+
+    function repairDependencyDates(project) {
+      if (!project || !project.tasks) return project;
+      const tasks = project.tasks.map((task) => ({ ...task, dependsOn: (task.dependsOn || []).slice() }));
+      const byId = new Map(tasks.map((task) => [task.id, task]));
+      const order = [];
+      const visiting = new Set();
+      const visited = new Set();
+      const visit = (task) => {
+        if (!task || visited.has(task.id) || visiting.has(task.id)) return;
+        visiting.add(task.id);
+        for (const dependencyId of task.dependsOn) visit(byId.get(dependencyId));
+        visiting.delete(task.id);
+        visited.add(task.id);
+        order.push(task);
+      };
+      tasks.forEach(visit);
+      const timestamp = new Date().toISOString();
+      for (const task of order) {
+        let required = null;
+        for (const dependencyId of task.dependsOn) {
+          const dependency = byId.get(dependencyId);
+          if (!dependency || !dependency.dueDate) continue;
+          const next = addDays(parseYmd(dependency.dueDate), 1);
+          if (!required || next > required) required = next;
+        }
+        if (!required) continue;
+        const start = parseYmd(task.startDate);
+        if (start && start >= required) continue;
+        const due = parseYmd(task.dueDate);
+        const duration = start && due
+          ? Math.max(0, Math.round((due.getTime() - start.getTime()) / DAY))
+          : due ? Math.max(0, Math.round((due.getTime() - required.getTime()) / DAY)) : 0;
+        task.startDate = ymd(required);
+        task.dueDate = ymd(addDays(required, duration));
+        task.updatedAt = timestamp;
+      }
+      return { ...project, tasks, updatedAt: timestamp };
     }
 
     function normalizeTagList(value, fallback) {
@@ -1143,11 +1643,15 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       const text = cleanMultiline(raw.text, 4000);
       if (!text) return null;
       const done = raw.done === true;
+      const repeat = raw.repeat === 'daily' ? 'daily' : null;
       return {
         id: typeof raw.id === 'string' && raw.id ? raw.id : uid('m'),
         text,
         note: cleanMultiline(raw.note, 4000),
         tags: uniqueTags(raw.tags),
+        repeat,
+        seriesId: repeat ? (typeof raw.seriesId === 'string' && raw.seriesId ? raw.seriesId : uid('r')) : null,
+        projectId: typeof raw.projectId === 'string' && raw.projectId ? raw.projectId : null,
         done,
         doneAt: done ? (typeof raw.doneAt === 'string' ? raw.doneAt : new Date().toISOString()) : null,
         dueDate: isDateText(raw.dueDate) ? raw.dueDate : null,
@@ -1241,6 +1745,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           const store = emptyStore();
           store.memos = safeArray(parsed.memos).map(normalizeMemo).filter(Boolean);
           store.events = safeArray(parsed.events).map(normalizeEvent).filter(Boolean);
+          store.projects = safeArray(parsed.projects).map(normalizeProject).filter(Boolean);
           store.reports = parsed.reports && typeof parsed.reports === 'object' ? parsed.reports : {};
           store.ui = parsed.ui && typeof parsed.ui === 'object' ? parsed.ui : store.ui;
           store.tagOptions = normalizeTagList(parsed.tagOptions, true);
@@ -1305,7 +1810,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       return memos.slice();
     }
 
-    function dayEntries(memos, events, dateText) {
+    function dayEntries(memos, events, dateText, projects) {
       const entries = [];
       for (const memo of memos) {
         if (memo.dueDate !== dateText) continue;
@@ -1331,6 +1836,26 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           note: event.note,
           eventId: event.id,
         });
+      }
+      for (const project of (Array.isArray(projects) ? projects : [])) {
+        for (const task of (project.tasks || [])) {
+          const date = task.dueDate || task.startDate;
+          if (date !== dateText) continue;
+          entries.push({
+            id: 'task:' + task.id,
+            kind: 'task',
+            title: task.title,
+            time: null,
+            done: task.progress >= 100,
+            progress: task.progress,
+            tags: [],
+            projectId: project.id,
+            projectName: project.name,
+            taskId: task.id,
+            owner: task.owner,
+            role: task.role,
+          });
+        }
       }
       entries.sort((a, b) => {
         if (a.time && b.time) return a.time.localeCompare(b.time);
@@ -1376,6 +1901,69 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
     function groupOverdue(memos, now) {
       const today = ymd(now);
       return memos.filter((memo) => !memo.done && memo.dueDate && memo.dueDate < today);
+    }
+
+    function advanceDailyMemos(memos, now) {
+      const today = ymd(now);
+      const series = new Map();
+      for (const memo of memos) {
+        if (memo.repeat !== 'daily') continue;
+        const key = memo.seriesId || memo.id;
+        if (!series.has(key)) series.set(key, []);
+        series.get(key).push(memo);
+      }
+      if (!series.size) return { memos, changed: false };
+
+      const updates = new Map();
+      const additions = [];
+      const timestamp = now.toISOString();
+
+      for (const [key, list] of series) {
+        list.sort((a, b) => String(b.dueDate || '').localeCompare(String(a.dueDate || '')));
+        const latest = list[0];
+        if (!latest || !latest.dueDate) continue;
+        if (latest.dueDate >= today) {
+          for (const memo of list) {
+            if (memo.id !== latest.id) {
+              updates.set(memo.id, { repeat: null, seriesId: null, updatedAt: timestamp });
+            }
+          }
+          continue;
+        }
+        const existing = list.find((memo) => memo.dueDate === today);
+        if (latest.done) {
+          if (!existing) {
+            additions.push({
+              ...latest,
+              id: uid('m'),
+              done: false,
+              doneAt: null,
+              dueDate: today,
+              createdAt: timestamp,
+              updatedAt: timestamp,
+              repeat: 'daily',
+              seriesId: key,
+            });
+          }
+          for (const memo of list) {
+            if (!existing || memo.id !== existing.id) {
+              updates.set(memo.id, { repeat: null, seriesId: null, updatedAt: timestamp });
+            }
+          }
+        } else if (!existing) {
+          updates.set(latest.id, { dueDate: today, updatedAt: timestamp });
+        } else {
+          for (const memo of list) {
+            if (memo.id !== existing.id) {
+              updates.set(memo.id, { repeat: null, seriesId: null, updatedAt: timestamp });
+            }
+          }
+        }
+      }
+
+      if (!updates.size && !additions.length) return { memos, changed: false };
+      const next = memos.map((memo) => (updates.has(memo.id) ? { ...memo, ...updates.get(memo.id) } : memo));
+      return { memos: additions.concat(next), changed: true };
     }
 
     /* ---------------------------------------------------------------- summary */
@@ -1660,11 +2248,17 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       for (const event of safeArray(local && local.events)) {
         if (!eventIds.has(event.id)) { events.push(event); eventIds.add(event.id); }
       }
+      const projects = safeArray(remote && remote.projects).slice();
+      const projectIds = new Set(projects.map((project) => project.id));
+      for (const project of safeArray(local && local.projects)) {
+        if (!projectIds.has(project.id)) { projects.push(project); projectIds.add(project.id); }
+      }
       return {
         ...(remote || emptyStore()),
         v: 2,
         memos,
         events,
+        projects,
         reports: { ...(local && local.reports ? local.reports : {}), ...(remote && remote.reports ? remote.reports : {}) },
         tagOptions: normalizeTagList(
           [...(remote && remote.tagOptions ? remote.tagOptions : []), ...(local && local.tagOptions ? local.tagOptions : [])],
@@ -1820,6 +2414,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       想法: 'tag_idea',
       会议: 'tag_meeting',
       客户: 'tag_client',
+      项目: 'tag_project',
     };
 
     function tagLabel(tag) {
@@ -1829,6 +2424,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
     function tagTone(tag) {
       if (tag === '紧急') return 'danger';
       if (tag === '客户') return 'warn';
+      if (tag === '项目') return 'primary';
       if (tag === '想法' || tag === '会议') return 'teal';
       return 'default';
     }
@@ -1862,6 +2458,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           `- 内容：${memo.text}`,
           tags ? `- 标签：${tags}` : '',
           due ? `- 截止：${due}` : '',
+          memo.repeat === 'daily' ? '- 重复：每天' : '',
           `- 状态：${memo.done ? '已完成' : '未完成'}`,
           `- ID：${memo.id}`,
           '',
@@ -1872,6 +2469,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           `- Text: ${memo.text}`,
           tags ? `- Tags: ${tags}` : '',
           due ? `- Due: ${due}` : '',
+          memo.repeat === 'daily' ? '- Repeat: daily' : '',
           `- Status: ${memo.done ? 'done' : 'open'}`,
           `- ID: ${memo.id}`,
           '',
@@ -1919,6 +2517,8 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
 
       const parsed = useMemo(() => parseCapture(draft, now), [draft, now]);
       const bulk = isBulkDraft(draft);
+      const tagChoices = (Array.isArray(props.tagOptions) ? props.tagOptions : TAG_OPTIONS).slice();
+      if (tagChoices.indexOf('项目') < 0) tagChoices.unshift('项目');
       const parsedTags = parsed.tags.filter((tag) => tagOff.indexOf(tag) < 0);
       const activeTags = uniqueTags(parsedTags.concat(tagAdd));
       const dueDate = useOverride ? overrideDate : parsed.dueDate;
@@ -2064,7 +2664,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
             'aria-label': t('manage_tags'),
             onClick: props.onManageTags,
           }, h(Icon, { name: 'edit', size: 10 }), t('manage_tags')),
-          (Array.isArray(props.tagOptions) ? props.tagOptions : TAG_OPTIONS).map((tag) => h(Chip, {
+          tagChoices.map((tag) => h(Chip, {
             key: tag,
             active: activeTags.indexOf(tag) >= 0,
             tone: tagTone(tag),
@@ -2082,6 +2682,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       const [menuOpen, setMenuOpen] = useState(false);
       const [editText, setEditText] = useState(memo.text);
       const [editNote, setEditNote] = useState(memo.note || '');
+      const [editRepeat, setEditRepeat] = useState(memo.repeat === 'daily');
       const [editTags, setEditTags] = useState(memo.tags);
       const [editDate, setEditDate] = useState(memo.dueDate || '');
       const [editTime, setEditTime] = useState(memo.dueTime || '');
@@ -2092,6 +2693,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
         if (!props.editing) return;
         setEditText(memo.text);
         setEditNote(memo.note || '');
+        setEditRepeat(memo.repeat === 'daily');
         setEditTags(memo.tags);
         setEditDate(memo.dueDate || '');
         setEditTime(memo.dueTime || '');
@@ -2137,12 +2739,15 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       function save() {
         const text = editText.trim();
         if (!text) return;
+        const repeat = editRepeat ? 'daily' : null;
         props.onSave(memo.id, {
           text,
           note: cleanMultiline(editNote, 4000),
           tags: uniqueTags(editTags),
-          dueDate: editDate || null,
-          dueTime: editDate ? (editTime || null) : null,
+          repeat,
+          seriesId: repeat ? (memo.seriesId || uid('r')) : null,
+          dueDate: editDate || (repeat ? ymd(now) : null),
+          dueTime: (editDate || repeat) ? (editTime || null) : null,
         });
       }
 
@@ -2160,10 +2765,12 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       const important = hasTag(memo, '重要');
       const metaTags = memo.tags.slice(0, 3);
       const moreTags = memo.tags.length - metaTags.length;
+      const editTagChoices = (Array.isArray(props.tagOptions) ? props.tagOptions : TAG_OPTIONS).slice();
+      if (editTagChoices.indexOf('项目') < 0) editTagChoices.unshift('项目');
 
       return h('article', {
         ref: rootRef,
-        className: ['pmw-memo', memo.done ? 'is-done' : '', important ? 'is-important' : '', props.flash ? 'is-flash' : '', props.drawerOpen ? 'is-drawer' : ''].filter(Boolean).join(' '),
+        className: ['pmw-memo', memo.done ? 'is-done' : '', important ? 'is-important' : '', props.flash ? 'is-flash' : '', props.drawerOpen ? 'is-drawer' : '', (memo.projectId || hasTag(memo, '项目')) ? 'is-project' : ''].filter(Boolean).join(' '),
         onClick: (event) => {
           const target = event.target;
           if (target && typeof target.closest === 'function'
@@ -2232,7 +2839,14 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
               }),
             ),
             h('div', { className: 'pmw-editrow' },
-              normalizeTagList((Array.isArray(props.tagOptions) ? props.tagOptions : TAG_OPTIONS).concat(editTags), false).map((tag) => h(Chip, {
+              h(Chip, {
+                active: editRepeat,
+                icon: 'repeat',
+                onClick: () => setEditRepeat((value) => !value),
+              }, t('repeat_daily')),
+            ),
+            h('div', { className: 'pmw-editrow' },
+              normalizeTagList(editTagChoices.concat(editTags), false).map((tag) => h(Chip, {
                 key: tag,
                 active: editTags.indexOf(tag) >= 0,
                 tone: tagTone(tag),
@@ -2269,15 +2883,30 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           )
           : null,
 
-        !props.editing && (metaTags.length || memo.dueDate || memo.pinned)
+        !props.editing && (metaTags.length || memo.dueDate || memo.pinned || memo.repeat === 'daily' || memo.projectId || hasTag(memo, '项目'))
           ? h('div', { className: 'pmw-memo-meta' },
             memo.pinned ? h('span', { className: 'pmw-pin', title: t('pin') }, h(Icon, { name: 'pin', size: 11 })) : null,
+            memo.projectId
+              ? h('button', {
+                type: 'button',
+                className: 'pmw-project-linked',
+                title: t('project_open'),
+                onClick: (event) => { event.stopPropagation(); props.onOpenProject(memo.projectId); },
+              }, h(Icon, { name: 'project', size: 11 }), t('project_linked'))
+              : hasTag(memo, '项目')
+                ? h('button', {
+                  type: 'button',
+                  className: 'pmw-project-cta',
+                  onClick: (event) => { event.stopPropagation(); props.onCreateProject(memo); },
+                }, h(Icon, { name: 'project', size: 11 }), t('project_convert'))
+                : null,
             metaTags.map((tag) => h(TagChip, {
               key: tag,
               tag,
               onClick: () => props.onDrawerToggle(memo.id),
             })),
             moreTags > 0 ? h('span', { className: 'pmw-meta-text' }, `+${moreTags}`) : null,
+            memo.repeat === 'daily' ? h('span', { className: 'pmw-repeat', title: t('repeat_daily') }, h(Icon, { name: 'repeat', size: 11 }), t('repeat_short')) : null,
             memo.dueDate ? h(DueBadge, { memo, now }) : null,
           )
           : null,
@@ -2315,6 +2944,11 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
         h('button', {
           type: 'button',
           role: 'menuitem',
+          onClick: () => { setMenuOpen(false); props.onDrawerClose(); props.onCreateProject(memo); },
+        }, h(Icon, { name: 'project', size: 13 }), t('project_memo')),
+        h('button', {
+          type: 'button',
+          role: 'menuitem',
           onClick: () => { setMenuOpen(false); props.onDrawerClose(); props.onPin(memo.id); },
         }, h(Icon, { name: 'pin', size: 13 }), memo.pinned ? t('unpin') : t('pin')),
         h('button', {
@@ -2332,6 +2966,709 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       );
     }
 
+    /* ------------------------------------------------------------- projects */
+
+    function Gantt(props) {
+      const project = props.project;
+      const now = props.now;
+      const today = ymd(now);
+      const [dragId, setDragId] = useState(null);
+      const [dropRow, setDropRow] = useState(null);
+      const tasks = project.tasks || [];
+      const dates = [project.startDate, project.dueDate, today]
+        .concat(tasks.flatMap((task) => [task.startDate, task.dueDate]))
+        .filter((value) => isDateText(value));
+      let start = dates.length ? dates.reduce((min, value) => (value < min ? value : min)) : today;
+      let end = dates.length ? dates.reduce((max, value) => (value > max ? value : max)) : ymd(addDays(now, 13));
+      if (end < start) end = start;
+      const total = Math.min(180, Math.max(1, Math.round((parseYmd(end).getTime() - parseYmd(start).getTime()) / DAY) + 1));
+      const dayWidth = 28;
+      const rowHeight = 38;
+      const labelWidth = 104;
+      const index = (text) => {
+        const parsed = parseYmd(text);
+        if (!parsed) return 0;
+        return Math.max(0, Math.min(total - 1, Math.round((parsed.getTime() - parseYmd(start).getTime()) / DAY)));
+      };
+      const days = Array.from({ length: total }, (_, offset) => addDays(parseYmd(start), offset));
+      const bars = tasks.map((task, row) => {
+        const taskStart = task.startDate || project.startDate || today;
+        const taskEnd = task.dueDate || taskStart;
+        const startIndex = index(taskStart);
+        const endIndex = Math.max(startIndex, index(taskEnd));
+        return {
+          task,
+          row,
+          startIndex,
+          endIndex,
+          left: startIndex * dayWidth + 4,
+          width: Math.max(18, (endIndex - startIndex + 1) * dayWidth - 8),
+        };
+      });
+      const byId = new Map(bars.map((bar) => [bar.task.id, bar]));
+      const conflictIds = new Set(dependencyConflicts(project).map((entry) => entry.taskId));
+      const paths = [];
+      for (const bar of bars) {
+        for (const dependencyId of bar.task.dependsOn || []) {
+          const from = byId.get(dependencyId);
+          if (!from) continue;
+          const x1 = from.left + from.width;
+          const y1 = from.row * rowHeight + rowHeight / 2;
+          const x2 = bar.left - 3;
+          const y2 = bar.row * rowHeight + rowHeight / 2;
+          const gap = 8;
+          let d;
+          if (bar.row === from.row) {
+            d = `M ${x1} ${y1} H ${x2}`;
+          } else if (x2 > x1 + gap) {
+            d = `M ${x1} ${y1} H ${x1 + gap} V ${y2} H ${x2}`;
+          } else {
+            // The dependent task starts at/ before the predecessor's finish.
+            // Route the connector through a lane between the two rows so it
+            // never folds back onto itself or the bars.
+            const midY = y1 + (y2 - y1) / 2;
+            const turnX = Math.max(4, x2 - gap);
+            d = `M ${x1} ${y1} H ${x1 + gap} V ${midY} H ${turnX} V ${y2} H ${x2}`;
+          }
+          paths.push(h('path', {
+            key: `${from.task.id}-${bar.task.id}`,
+            d,
+            fill: 'none',
+            stroke: 'var(--pmw-primary)',
+            'stroke-width': 1.2,
+            'stroke-dasharray': '3 2',
+            'marker-end': 'url(#pmw-gantt-arrow)',
+            opacity: 0.72,
+          }));
+        }
+      }
+
+      return h('div', { className: 'pmw-gantt' },
+        h('div', { className: 'pmw-gantt-scroll' },
+          h('div', { className: 'pmw-gantt-canvas', style: { width: labelWidth + total * dayWidth } },
+            h('div', { className: 'pmw-gantt-head' },
+              h('div', { className: 'pmw-gantt-corner' }, t('gantt_task')),
+              h('div', { className: 'pmw-gantt-days' },
+                days.map((day, offset) => h('div', {
+                  key: offset,
+                  className: 'pmw-gantt-day'
+                    + ([0, 6].includes(day.getDay()) ? ' is-weekend' : '')
+                    + (ymd(day) === today ? ' is-today' : ''),
+                  title: ymd(day),
+                }, day.getDate())),
+              ),
+            ),
+            tasks.length
+              ? h('div', { style: { position: 'relative' } },
+                bars.map((bar) => {
+                  const blocked = (bar.task.dependsOn || []).some((id) => {
+                    const dependency = byId.get(id);
+                    return dependency && dependency.task.progress < 100;
+                  });
+                  const done = bar.task.progress >= 100;
+                  return h('div', {
+                    key: bar.task.id,
+                    className: 'pmw-gantt-row'
+                      + (dragId === bar.task.id ? ' is-dragging' : '')
+                      + (dropRow === bar.row && dragId && dragId !== bar.task.id ? ' is-drop' : ''),
+                    onDragOver: (event) => {
+                      if (!dragId) return;
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = 'move';
+                      setDropRow(bar.row);
+                    },
+                    onDrop: (event) => {
+                      event.preventDefault();
+                      const from = dragId;
+                      setDragId(null);
+                      setDropRow(null);
+                      if (from && from !== bar.task.id) props.onReorderTasks(from, bar.task.id);
+                    },
+                  },
+                    h('div', {
+                      className: 'pmw-gantt-label',
+                      role: 'button',
+                      tabIndex: 0,
+                      title: bar.task.title,
+                      onClick: () => props.onEditTask(bar.task),
+                      onKeyDown: (event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          props.onEditTask(bar.task);
+                        }
+                      },
+                    },
+                    h('span', {
+                      className: 'pmw-gantt-grip',
+                      draggable: true,
+                      title: t('gantt_drag_hint'),
+                      onClick: (event) => event.stopPropagation(),
+                      onDragStart: (event) => {
+                        event.stopPropagation();
+                        setDragId(bar.task.id);
+                        event.dataTransfer.effectAllowed = 'move';
+                        event.dataTransfer.setData('text/plain', bar.task.id);
+                      },
+                      onDragEnd: () => { setDragId(null); setDropRow(null); },
+                    }, '⠿'),
+                    h('div', { className: 'pmw-gantt-label-text' },
+                      h('b', null, bar.task.title),
+                      h('small', null, `${bar.task.owner || t('task_self')}${bar.task.role ? ' · ' + bar.task.role : ''} · ${bar.task.progress}%`),
+                    ),
+                    ),
+                    h('div', { className: 'pmw-gantt-track' },
+                      h('div', { className: 'pmw-gantt-today', style: { left: index(today) * dayWidth } }),
+                      h('button', {
+                        type: 'button',
+                        className: 'pmw-gantt-bar' + (done ? ' is-done' : blocked ? ' is-blocked' : '') + (conflictIds.has(bar.task.id) ? ' is-conflict' : ''),
+                        style: { left: bar.left, width: bar.width },
+                        title: `${bar.task.title} · ${bar.task.progress}%`,
+                        onClick: () => props.onEditTask(bar.task),
+                      }, bar.width > 42 ? `${bar.task.progress}%` : ''),
+                    ),
+                  );
+                }),
+                h('svg', {
+                  className: 'pmw-gantt-svg',
+                  width: total * dayWidth,
+                  height: tasks.length * rowHeight,
+                  style: { top: 0 },
+                },
+                h('defs', null, h('marker', {
+                  id: 'pmw-gantt-arrow',
+                  markerWidth: 6,
+                  markerHeight: 6,
+                  refX: 5,
+                  refY: 3,
+                  orient: 'auto',
+                }, h('path', { d: 'M0,0 L6,3 L0,6 z', fill: 'var(--pmw-primary)' }))),
+                paths,
+                ),
+                )
+              : h('div', { className: 'pmw-gantt-empty' }, t('project_empty')),
+          ),
+        ),
+      );
+    }
+
+    function ProjectsView(props) {
+      const projects = props.projects || [];
+      const selected = projects.find((project) => project.id === props.selectedId) || projects[0] || null;
+      const progress = selected ? projectProgress(selected) : 0;
+      const conflicts = selected ? dependencyConflicts(selected) : [];
+      return h('div', { className: 'pmw-projects' },
+        projects.length
+          ? h('div', { className: 'pmw-project-switch' },
+            h('select', {
+              value: selected ? selected.id : '',
+              'aria-label': t('tab_projects'),
+              onChange: (event) => props.onSelect(event.target.value),
+            }, projects.map((project) => h('option', { key: project.id, value: project.id }, project.name))),
+            h('button', {
+              type: 'button',
+              className: 'pmw-iconbtn',
+              title: t('edit'),
+              'aria-label': t('edit'),
+              onClick: () => selected && props.onEditProject(selected),
+            }, h(Icon, { name: 'edit', size: 14 })),
+          )
+          : null,
+        selected
+          ? h('div', { className: 'pmw-project-card' },
+            h('div', { className: 'pmw-project-title' },
+              h('h3', null, selected.name),
+              h('span', { className: 'pmw-project-progress-label' }, `${progress}%`),
+            ),
+            selected.description ? h('p', { className: 'pmw-project-desc' }, selected.description) : null,
+            h('div', { className: 'pmw-project-meta' },
+              h('span', null, h(Icon, { name: 'user', size: 10 }), `${selected.owner || t('task_self')}${selected.role ? ' · ' + selected.role : ''}`),
+              selected.startDate || selected.dueDate
+                ? h('span', null, h(Icon, { name: 'calendar', size: 10 }), `${selected.startDate || '—'} → ${selected.dueDate || '—'}`)
+                : null,
+              h('span', null, h(Icon, { name: 'project', size: 10 }), t('project_tasks', { n: selected.tasks.length })),
+            ),
+            h('div', { className: 'pmw-project-bar' }, h('i', { style: { width: `${progress}%` } })),
+            conflicts.length
+              ? h('div', { className: 'pmw-dep-warning' },
+                h(Icon, { name: 'alert', size: 12 }),
+                h('span', null, t('deps_conflict', { n: conflicts.length })),
+                h('button', {
+                  type: 'button',
+                  onClick: () => props.onRepairDependencies(selected.id),
+                }, t('deps_fix')),
+              )
+              : null,
+            h(Gantt, {
+              project: selected,
+              now: props.now,
+              onEditTask: (task) => props.onEditTask(selected, task),
+              onReorderTasks: (fromId, toId) => props.onReorderTasks(selected.id, fromId, toId),
+            }),
+            h('div', { className: 'pmw-gantt-hint' }, t('gantt_drag_hint')),
+            h('button', {
+              type: 'button',
+              className: 'pmw-btn is-ghost',
+              style: { marginTop: 8, width: '100%' },
+              onClick: () => props.onAddTask(selected),
+            }, '+ ', t('project_new_task')),
+          )
+          : h('div', { className: 'pmw-empty' },
+            h(Icon, { name: 'project', size: 28 }),
+            h('h4', null, t('project_no_projects')),
+            h('p', null, t('project_first')),
+          ),
+      );
+    }
+
+    function ProjectSheet(props) {
+      const blank = () => ({
+        name: '',
+        description: '',
+        owner: t('task_self'),
+        role: '',
+        startDate: ymd(new Date()),
+        dueDate: ymd(addDays(new Date(), 13)),
+      });
+      const [form, setForm] = useState(blank);
+      useEffect(() => {
+        if (!props.open) return;
+        const source = props.project || props.initial || {};
+        setForm({ ...blank(), ...source });
+      }, [props.open, props.project && props.project.id]);
+      if (!props.open) return null;
+      const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+      return h('div', {
+        className: 'pmw-backdrop',
+        onMouseDown: (event) => { if (event.target === event.currentTarget) props.onClose(); },
+      },
+      h('div', { className: 'pmw-sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': props.project ? t('edit') : t('project_new') },
+        h('div', { className: 'pmw-sheet-grip' }),
+        h('div', { className: 'pmw-sheet-head' },
+          h('div', { className: 'pmw-spark', style: { width: 26, height: 26, borderRadius: 9 } }, h(Icon, { name: 'project', size: 14 })),
+          h('h3', null, props.project ? t('edit') : t('project_new')),
+          h('button', { type: 'button', className: 'pmw-iconbtn', onClick: props.onClose, 'aria-label': t('close') }, h(Icon, { name: 'close', size: 15 })),
+        ),
+        h('div', { className: 'pmw-sheet-body' },
+          h('label', { className: 'pmw-sheet-label' }, t('project_name')),
+          h('input', { className: 'pmw-input', style: { width: '100%', height: 34 }, value: form.name, autoFocus: true, onChange: (event) => set('name', event.target.value) }),
+          h('label', { className: 'pmw-sheet-label' }, t('project_desc')),
+          h('textarea', { value: form.description, placeholder: t('project_desc'), onChange: (event) => set('description', event.target.value) }),
+          h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 } },
+            h('div', null, h('label', { className: 'pmw-sheet-label' }, t('project_owner')), h('input', { className: 'pmw-input', style: { width: '100%' }, value: form.owner, onChange: (event) => set('owner', event.target.value) })),
+            h('div', null, h('label', { className: 'pmw-sheet-label' }, t('project_role')), h('input', { className: 'pmw-input', style: { width: '100%' }, value: form.role, onChange: (event) => set('role', event.target.value) })),
+          ),
+          h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 } },
+            h('div', null, h('label', { className: 'pmw-sheet-label' }, t('project_start')), h('input', { className: 'pmw-input', type: 'date', style: { width: '100%' }, value: form.startDate || '', onChange: (event) => set('startDate', event.target.value) })),
+            h('div', null, h('label', { className: 'pmw-sheet-label' }, t('project_due')), h('input', { className: 'pmw-input', type: 'date', style: { width: '100%' }, value: form.dueDate || '', onChange: (event) => set('dueDate', event.target.value) })),
+          ),
+        ),
+        h('div', { className: 'pmw-sheet-foot' },
+          h('button', { type: 'button', className: 'pmw-btn is-ghost', onClick: props.onClose }, t('cancel')),
+          h('button', { type: 'button', className: 'pmw-btn is-primary', disabled: !cleanString(form.name, 120), onClick: () => props.onSave(form) }, t('project_save')),
+        ),
+      ));
+    }
+
+    function TaskSheet(props) {
+      const task = props.task;
+      const project = props.project;
+      const blank = () => ({
+        title: '',
+        owner: t('task_self'),
+        role: '',
+        startDate: ymd(new Date()),
+        dueDate: ymd(addDays(new Date(), 2)),
+        progress: 0,
+        dependsOn: [],
+      });
+      const [form, setForm] = useState(blank);
+      useEffect(() => {
+        if (!props.open) return;
+        setForm({ ...blank(), ...(task || {}), dependsOn: (task && task.dependsOn) || [] });
+      }, [props.open, task && task.id, project && project.id]);
+      if (!props.open) return null;
+      const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+      const others = (project.tasks || []).filter((entry) => !task || entry.id !== task.id);
+      return h('div', {
+        className: 'pmw-backdrop',
+        onMouseDown: (event) => { if (event.target === event.currentTarget) props.onClose(); },
+      },
+      h('div', { className: 'pmw-sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': task ? t('edit') : t('project_new_task') },
+        h('div', { className: 'pmw-sheet-grip' }),
+        h('div', { className: 'pmw-sheet-head' },
+          h('div', { className: 'pmw-spark', style: { width: 26, height: 26, borderRadius: 9 } }, h(Icon, { name: 'repeat', size: 14 })),
+          h('h3', null, task ? t('edit') : t('project_new_task')),
+          h('button', { type: 'button', className: 'pmw-iconbtn', onClick: props.onClose, 'aria-label': t('close') }, h(Icon, { name: 'close', size: 15 })),
+        ),
+        h('div', { className: 'pmw-sheet-body' },
+          h('label', { className: 'pmw-sheet-label' }, t('project_task_title')),
+          h('input', { className: 'pmw-input', style: { width: '100%', height: 34 }, value: form.title, autoFocus: true, onChange: (event) => set('title', event.target.value) }),
+          h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 } },
+            h('div', null, h('label', { className: 'pmw-sheet-label' }, t('task_owner')), h('input', { className: 'pmw-input', style: { width: '100%' }, value: form.owner, onChange: (event) => set('owner', event.target.value) })),
+            h('div', null, h('label', { className: 'pmw-sheet-label' }, t('task_role')), h('input', { className: 'pmw-input', style: { width: '100%' }, value: form.role, onChange: (event) => set('role', event.target.value) })),
+          ),
+          h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 } },
+            h('div', null, h('label', { className: 'pmw-sheet-label' }, t('task_start')), h('input', { className: 'pmw-input', type: 'date', style: { width: '100%' }, value: form.startDate || '', onChange: (event) => set('startDate', event.target.value) })),
+            h('div', null, h('label', { className: 'pmw-sheet-label' }, t('task_due')), h('input', { className: 'pmw-input', type: 'date', style: { width: '100%' }, value: form.dueDate || '', onChange: (event) => set('dueDate', event.target.value) })),
+          ),
+          h('label', { className: 'pmw-sheet-label' }, t('task_progress')),
+          h('div', { className: 'pmw-progress-row' },
+            h('input', { type: 'range', min: 0, max: 100, step: 5, value: form.progress, onChange: (event) => set('progress', Number(event.target.value)) }),
+            h('output', null, `${form.progress}%`),
+          ),
+          others.length
+            ? h('div', null,
+              h('label', { className: 'pmw-sheet-label' }, t('task_depends')),
+              h('div', { className: 'pmw-dependency-list' }, others.map((entry) => h(Chip, {
+                key: entry.id,
+                active: form.dependsOn.indexOf(entry.id) >= 0,
+                onClick: () => set('dependsOn', form.dependsOn.indexOf(entry.id) >= 0
+                  ? form.dependsOn.filter((id) => id !== entry.id)
+                  : form.dependsOn.concat([entry.id])),
+              }, entry.title))),
+              h('div', { className: 'pmw-meta-text', style: { marginTop: 4 } }, t('task_depends_hint')),
+            )
+            : null,
+        ),
+        h('div', { className: 'pmw-sheet-foot' },
+          h('button', { type: 'button', className: 'pmw-btn is-ghost', onClick: props.onClose }, t('cancel')),
+          h('button', { type: 'button', className: 'pmw-btn is-primary', disabled: !cleanString(form.title, 200), onClick: () => props.onSave(form) }, t('task_save')),
+        ),
+      ));
+    }
+
+    /* -------------------------------------------------------------- inbox view */
+
+    function mailDateLabel(value, now) {
+      const date = value ? new Date(value) : null;
+      if (!date || Number.isNaN(date.getTime())) return '';
+      if (ymd(date) === ymd(now)) return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+      return `${date.getMonth() + 1}月${date.getDate()}日`;
+    }
+
+    function mailFromLabel(value) {
+      const text = String(value || '').trim();
+      const match = /^"?([^"<]*)"?\s*<([^>]+)>/.exec(text);
+      return (match && match[1].trim()) || text.replace(/<[^>]+>/g, '').trim() || text;
+    }
+
+    function InboxSetup(props) {
+      const [email, setEmail] = useState('');
+      const [authCode, setAuthCode] = useState('');
+      const [busy, setBusy] = useState(false);
+      const [error, setError] = useState('');
+      async function submit() {
+        if (!email.trim() || !authCode.trim()) {
+          setError(t('inbox_required'));
+          return;
+        }
+        setBusy(true);
+        setError('');
+        const result = await props.onConnect({ email: email.trim(), authCode: authCode.trim() });
+        setBusy(false);
+        if (result && result.error) setError(t('inbox_error', { message: result.error }));
+        else setAuthCode('');
+      }
+      return h('div', { className: 'pmw-inbox-setup' },
+        h('div', { className: 'pmw-inbox-setup-head' },
+          props.onBack
+            ? h('button', {
+              type: 'button',
+              className: 'pmw-iconbtn',
+              title: t('inbox_back'),
+              onClick: props.onBack,
+            }, h(Icon, { name: 'back', size: 14 }))
+            : null,
+          h('h3', null, t('inbox_setup_title')),
+        ),
+        h('p', null, t('inbox_setup_desc')),
+        h('label', { className: 'pmw-sheet-label' }, t('inbox_email')),
+        h('input', {
+          className: 'pmw-input',
+          type: 'email',
+          placeholder: 'name@qq.com',
+          value: email,
+          autoComplete: 'email',
+          onChange: (event) => setEmail(event.target.value),
+        }),
+        h('label', { className: 'pmw-sheet-label' }, t('inbox_auth')),
+        h('input', {
+          className: 'pmw-input',
+          type: 'password',
+          placeholder: t('inbox_auth_ph'),
+          value: authCode,
+          autoComplete: 'off',
+          onChange: (event) => setAuthCode(event.target.value),
+        }),
+        error ? h('div', { className: 'pmw-inbox-error' }, error) : null,
+        h('button', {
+          type: 'button',
+          className: 'pmw-btn is-primary',
+          disabled: busy,
+          onClick: submit,
+        }, busy ? t('inbox_connecting') : t('inbox_connect')),
+        h('div', { className: 'pmw-inbox-help' }, t('inbox_help')),
+        h('div', { className: 'pmw-mail-readonly' }, t('inbox_readonly')),
+      );
+    }
+
+    const INBOX_CHANNELS = [
+      { id: 'qq-mail', icon: 'inbox', nameKey: 'inbox_channel_qq', descKey: 'inbox_channel_qq_desc', available: true },
+      { id: 'wechat', icon: 'wechat', nameKey: 'inbox_channel_wechat', descKey: 'inbox_channel_wechat_desc' },
+      { id: 'dingtalk', icon: 'dingtalk', nameKey: 'inbox_channel_dingtalk', descKey: 'inbox_channel_dingtalk_desc' },
+      { id: 'feishu', icon: 'feishu', nameKey: 'inbox_channel_feishu', descKey: 'inbox_channel_feishu_desc' },
+      { id: 'web', icon: 'rss', nameKey: 'inbox_channel_web', descKey: 'inbox_channel_web_desc' },
+    ];
+
+    function InboxChannelPicker(props) {
+      return h('div', { className: 'pmw-channel-picker' },
+        h('div', { className: 'pmw-channel-picker-head' },
+          h('b', null, t('inbox_pick_channel')),
+          h('button', {
+            type: 'button',
+            className: 'pmw-iconbtn',
+            title: t('close'),
+            onClick: props.onClose,
+          }, h(Icon, { name: 'close', size: 13 })),
+        ),
+        INBOX_CHANNELS.map((channel) => {
+          const connected = channel.id === 'qq-mail' && props.configured;
+          const available = channel.available === true;
+          if (!available) {
+            return h('div', {
+              key: channel.id,
+              className: 'pmw-channel-option is-soon',
+            },
+            h(Icon, { name: channel.icon, size: 15 }),
+            h('span', { className: 'pmw-channel-option-main' },
+              h('b', null, t(channel.nameKey)),
+              h('small', null, t(channel.descKey)),
+            ),
+            h('span', { className: 'pmw-channel-badge is-muted' }, t('inbox_soon')),
+            );
+          }
+          return h('div', {
+            key: channel.id,
+            role: 'button',
+            tabIndex: 0,
+            className: 'pmw-channel-option' + (connected ? ' is-connected' : ''),
+            onClick: () => props.onPick(channel.id),
+            onKeyDown: (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                props.onPick(channel.id);
+              }
+            },
+          },
+          h(Icon, { name: channel.icon, size: 15 }),
+          h('span', { className: 'pmw-channel-option-main' },
+            h('b', null, t(channel.nameKey)),
+            h('small', null, t(channel.descKey)),
+          ),
+          h('span', { className: 'pmw-channel-badge' + (connected ? '' : ' is-muted') },
+            connected ? t('inbox_connected') : t('inbox_not_connected')),
+          connected
+            ? h('button', {
+              type: 'button',
+              className: 'pmw-channel-disconnect',
+              onClick: (event) => { event.stopPropagation(); props.onDisconnect(); },
+            }, t('inbox_disconnect'))
+            : null,
+          );
+        }),
+        h('div', { className: 'pmw-channel-note' }, t('inbox_pick_channel_desc')),
+      );
+    }
+
+    function InboxView(props) {
+      const status = props.status;
+      const messages = props.messages || [];
+      const [activeChannel, setActiveChannel] = useState('all');
+      const [selectedId, setSelectedId] = useState(null);
+      const [setupOpen, setSetupOpen] = useState(false);
+      const [pickerOpen, setPickerOpen] = useState(false);
+      const configured = !!(status && status.configured);
+      useEffect(() => { if (configured) setSetupOpen(false); }, [configured]);
+      useEffect(() => { setSelectedId(null); }, [activeChannel]);
+      useEffect(() => {
+        if (selectedId && !messages.some((message) => message.id === selectedId)) setSelectedId(null);
+      }, [messages, selectedId]);
+
+      const items = messages.map((message) => ({ ...message, channelId: message.channelId || 'qq-mail' }));
+      const backendChannels = status && Array.isArray(status.channels) ? status.channels : [];
+      const connectedChannels = configured
+        ? (backendChannels.length
+          ? backendChannels.filter((channel) => channel.configured !== false).map((channel) => {
+            const known = INBOX_CHANNELS.find((entry) => entry.id === channel.id) || INBOX_CHANNELS[0];
+            return { ...known, ...channel, icon: channel.icon || known.icon, nameKey: channel.nameKey || known.nameKey };
+          })
+          : INBOX_CHANNELS.filter((channel) => channel.available === true))
+        : [];
+      const channelName = (channel) => {
+        if (!channel) return t('inbox_channel_qq');
+        if (channel.id === 'qq-mail') return t('inbox_channel_qq');
+        return channel.name || t(channel.nameKey || 'inbox_channel_qq');
+      };
+      const multi = connectedChannels.length > 1;
+      const isAll = !multi || activeChannel === 'all';
+      const visible = isAll ? items : items.filter((item) => item.channelId === activeChannel);
+      const selected = items.find((message) => message.id === selectedId) || null;
+      const lastSync = status && status.lastSyncAt ? mailDateLabel(status.lastSyncAt, props.now) : '';
+      const syncLabel = lastSync ? t('inbox_sync_at', { time: lastSync }) : '';
+
+      if (!configured) {
+        if (setupOpen) {
+          return h('div', { className: 'pmw-inbox' },
+            h(InboxSetup, { onConnect: props.onConnect, onBack: () => setSetupOpen(false) }),
+          );
+        }
+        return h('div', { className: 'pmw-inbox' },
+          h('div', { className: 'pmw-inbox-hub-head' },
+            h('div', { className: 'pmw-inbox-head-main' },
+              h('h3', null, t('inbox_title')),
+              h('p', null, t('inbox_hub_sub')),
+            ),
+            h('button', {
+              type: 'button',
+              className: 'pmw-btn is-primary',
+              onClick: () => setSetupOpen(true),
+            }, h(Icon, { name: 'inbox', size: 12 }), t('inbox_setup_title')),
+          ),
+          h('div', { className: 'pmw-channel-empty' },
+            h(Icon, { name: 'inbox', size: 24 }),
+            h('h4', null, t('inbox_hub_empty')),
+            h('p', null, t('inbox_hub_empty_desc')),
+          ),
+          h('div', { className: 'pmw-channel-future' },
+            h('span', { className: 'pmw-channel-future-label' }, t('inbox_soon')),
+            h('div', { className: 'pmw-channel-chip-row' },
+              INBOX_CHANNELS.filter((channel) => channel.available !== true).map((channel) => h('span', {
+                key: channel.id,
+                className: 'pmw-channel-chip',
+              }, h(Icon, { name: channel.icon, size: 11 }), t(channel.nameKey))),
+            ),
+          ),
+          h('div', { className: 'pmw-mail-readonly' }, t('inbox_readonly')),
+        );
+      }
+
+      if (selected) {
+        return h('div', { className: 'pmw-inbox' },
+          h('div', { className: 'pmw-inbox-head' },
+            h('button', {
+              type: 'button',
+              className: 'pmw-iconbtn',
+              title: t('inbox_back'),
+              onClick: () => setSelectedId(null),
+            }, h(Icon, { name: 'back', size: 14 })),
+            h('div', { className: 'pmw-inbox-head-main' },
+              h('small', null, connectedChannels.some((channel) => channel.id === selected.channelId)
+                ? channelName(connectedChannels.find((channel) => channel.id === selected.channelId))
+                : (selected.from || t('inbox_from'))),
+            ),
+          ),
+          h('div', { className: 'pmw-mail-detail' },
+            h('div', { className: 'pmw-mail-detail-head' },
+              h('h3', null, selected.subject),
+              h('div', { className: 'pmw-mail-detail-meta' },
+                h('span', null, selected.from || t('inbox_from')),
+                h('span', null, new Date(selected.date).toLocaleString('zh-CN')),
+              ),
+            ),
+            h('div', { className: 'pmw-mail-body' }, selected.text || selected.preview || ''),
+            h('div', { className: 'pmw-inbox-actions' },
+              h('button', {
+                type: 'button',
+                className: 'pmw-btn is-primary',
+                onClick: () => props.onAddMemo(selected),
+              }, h(Icon, { name: 'note', size: 12 }), t('inbox_add_todo')),
+            ),
+            h('div', { className: 'pmw-mail-readonly' }, t('inbox_readonly')),
+          ),
+        );
+      }
+
+      const subtitle = multi
+        ? `${t('inbox_messages', { n: items.length })} · ${t('inbox_channels_count', { n: connectedChannels.length })}${syncLabel ? ` · ${syncLabel}` : ''}`
+        : `${status.email || ''} · ${t('inbox_messages', { n: items.length })}${syncLabel ? ` · ${syncLabel}` : ''}`;
+      return h('div', { className: 'pmw-inbox' },
+        h('div', { className: 'pmw-inbox-head' },
+          h('div', { className: 'pmw-inbox-head-main' },
+            h('h3', null, isAll ? t('inbox_title') : channelName(connectedChannels.find((channel) => channel.id === activeChannel) || connectedChannels[0])),
+            h('small', null, subtitle),
+          ),
+          h('div', { className: 'pmw-inbox-head-actions' },
+            h('button', {
+              type: 'button',
+              className: 'pmw-iconbtn',
+              title: t('inbox_sync'),
+              disabled: props.syncing,
+              onClick: () => props.onSync(true),
+            }, h(Icon, { name: 'refresh', size: 14 })),
+            h('button', {
+              type: 'button',
+              className: 'pmw-iconbtn',
+              title: t('inbox_add_channel'),
+              onClick: () => setPickerOpen((value) => !value),
+            }, '+'),
+          ),
+        ),
+        multi
+          ? h('div', { className: 'pmw-channel-tabs', role: 'tablist', 'aria-label': t('inbox_channels') },
+            h('button', {
+              type: 'button',
+              role: 'tab',
+              'aria-selected': isAll,
+              className: 'pmw-channel-tab' + (isAll ? ' is-active' : ''),
+              onClick: () => setActiveChannel('all'),
+            }, t('inbox_all'), h('span', { className: 'pmw-channel-count' }, items.length)),
+            connectedChannels.map((channel) => h('button', {
+              key: channel.id,
+              type: 'button',
+              role: 'tab',
+              'aria-selected': activeChannel === channel.id,
+              className: 'pmw-channel-tab' + (activeChannel === channel.id ? ' is-active' : ''),
+              onClick: () => setActiveChannel(channel.id),
+            }, h(Icon, { name: channel.icon, size: 12 }), channelName(channel))),
+          )
+          : null,
+        pickerOpen
+          ? h(InboxChannelPicker, {
+            configured: true,
+            onClose: () => setPickerOpen(false),
+            onPick: (id) => {
+              setPickerOpen(false);
+              if (id === 'qq-mail') setActiveChannel(multi ? 'qq-mail' : 'all');
+            },
+            onDisconnect: () => { setPickerOpen(false); props.onDisconnect(); },
+          })
+          : null,
+        props.error ? h('div', { className: 'pmw-inbox-error' }, props.error) : null,
+        visible.length
+          ? h('div', { className: 'pmw-inbox-list' }, visible.map((message) => h('button', {
+            key: message.id,
+            type: 'button',
+            className: 'pmw-mail' + (message.unread ? ' is-unread' : ''),
+            onClick: () => setSelectedId(message.id),
+          },
+          h('span', { className: 'pmw-mail-top' },
+            message.unread ? h('span', { className: 'pmw-mail-unread-dot' }) : null,
+            h('span', { className: 'pmw-mail-from', title: message.from || '' }, mailFromLabel(message.from) || t('inbox_from')),
+            h('span', { className: 'pmw-mail-date' }, mailDateLabel(message.date, props.now)),
+          ),
+          h('span', { className: 'pmw-mail-subject' }, message.subject),
+          h('span', { className: 'pmw-mail-preview' }, message.preview || ''),
+          multi && isAll
+            ? h('span', { className: 'pmw-mail-meta' }, h('span', { className: 'pmw-channel-badge' },
+              channelName(connectedChannels.find((channel) => channel.id === message.channelId) || connectedChannels[0])))
+            : null,
+          )))
+          : h('div', { className: 'pmw-empty' },
+            h(Icon, { name: 'inbox', size: 26 }),
+            h('h4', null, props.syncing ? t('inbox_syncing') : t('inbox_empty')),
+          ),
+      );
+    }
     /* -------------------------------------------------------------- memos view */
 
     function MemosView(props) {
@@ -2402,6 +3739,8 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
               onDelete: props.onDelete,
               onPin: props.onPin,
               onSend: props.onSend,
+              onCreateProject: props.onCreateProject,
+              onOpenProject: props.onOpenProject,
               tagOptions: props.tagOptions,
               drawerOpen: drawerId === memo.id,
               onDrawerToggle: (id) => setDrawerId((current) => (current === id ? null : id)),
@@ -2445,6 +3784,8 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
                 onDelete: props.onDelete,
                 onPin: props.onPin,
                 onSend: props.onSend,
+              onCreateProject: props.onCreateProject,
+              onOpenProject: props.onOpenProject,
               tagOptions: props.tagOptions,
                 drawerOpen: drawerId === memo.id,
                 onDrawerToggle: (id) => setDrawerId((current) => (current === id ? null : id)),
@@ -2498,7 +3839,10 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
 
       const cells = useMemo(() => monthCells(cursor), [cursor]);
       const selectedDate = parseYmd(selected) || now;
-      const entries = useMemo(() => dayEntries(props.memos, [], selected), [props.memos, selected]);
+      const entries = useMemo(
+        () => dayEntries(props.memos, [], selected, props.projects),
+        [props.memos, props.projects, selected],
+      );
       const todayText = ymd(now);
 
       const dotsByDate = useMemo(() => {
@@ -2511,8 +3855,15 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           if (!memo.dueDate || !map[memo.dueDate]) continue;
           map[memo.dueDate].push(memo.dueDate < todayText && !memo.done ? 'warn' : 'memo');
         }
+        for (const project of (props.projects || [])) {
+          for (const task of (project.tasks || [])) {
+            const date = task.dueDate || task.startDate;
+            if (!date || !map[date]) continue;
+            map[date].push(task.progress >= 100 ? 'task-done' : date < todayText ? 'warn' : 'task');
+          }
+        }
         return map;
-      }, [cells, props.memos, todayText]);
+      }, [cells, props.memos, props.projects, todayText]);
 
       function shiftMonth(step) {
         const next = new Date(cursor.getFullYear(), cursor.getMonth() + step, 1);
@@ -2568,7 +3919,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
             h('span', { className: 'pmw-dots' },
               dots.map((kind, index) => h('span', {
                 key: kind + index,
-                className: 'pmw-dot' + (kind === 'event' ? ' is-teal' : kind === 'warn' ? ' is-warn' : ''),
+                className: 'pmw-dot' + (kind === 'event' ? ' is-teal' : kind === 'warn' ? ' is-warn' : kind === 'task' ? ' is-task' : kind === 'task-done' ? ' is-task is-task-done' : ''),
               })),
             ));
           }),
@@ -2585,16 +3936,28 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
               const done = entry.done;
               return h('div', {
                 key: entry.id,
-                className: 'pmw-agenda-item' + (done ? ' is-done' : ''),
+                className: 'pmw-agenda-item' + (done ? ' is-done' : '') + (entry.kind === 'task' ? ' is-task' : ''),
                 style: { cursor: 'pointer' },
-                onClick: () => props.onOpenMemo(entry.memoId),
+                onClick: () => {
+                  if (entry.kind === 'task') props.onOpenTask(entry.projectId, entry.taskId);
+                  else props.onOpenMemo(entry.memoId);
+                },
               },
               h('div', { className: 'pmw-agenda-time' }, entry.time || t('due_all_day')),
               h('div', { style: { minWidth: 0 } },
                 h('div', { className: 'pmw-agenda-title' }, entry.title),
-                h('div', { className: 'pmw-agenda-sub' },
-                  entry.tags.slice(0, 3).map((tag) => h(TagChip, { key: tag, tag })),
-                ),
+                entry.kind === 'task'
+                  ? h('div', { className: 'pmw-agenda-sub' },
+                    h('span', { className: 'pmw-agenda-project' },
+                      h(Icon, { name: 'project', size: 10 }),
+                      entry.projectName,
+                      h('span', { className: 'pmw-agenda-progress' }, `${entry.progress}%`),
+                    ),
+                    entry.owner ? h('span', null, entry.owner) : null,
+                  )
+                  : h('div', { className: 'pmw-agenda-sub' },
+                    entry.tags.slice(0, 3).map((tag) => h(TagChip, { key: tag, tag })),
+                  ),
               ),
               h('button', {
                 type: 'button',
@@ -2603,7 +3966,11 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
                 role: 'checkbox',
                 'aria-checked': done,
                 'aria-label': done ? t('mark_open') : t('mark_done'),
-                onClick: (event) => { event.stopPropagation(); props.onToggleEntry(entry); },
+                onClick: (event) => {
+                  event.stopPropagation();
+                  if (entry.kind === 'task') props.onToggleTask(entry);
+                  else props.onToggleEntry(entry);
+                },
               }, done ? h(Icon, { name: 'check', size: 11, weight: 2.4 }) : null),
               );
             })
@@ -3157,6 +4524,8 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
     const TABS = [
       { id: 'memos', label: 'tab_memos', icon: 'note' },
       { id: 'calendar', label: 'tab_calendar', icon: 'calendar' },
+      { id: 'projects', label: 'tab_projects', icon: 'project' },
+      { id: 'inbox', label: 'tab_inbox', icon: 'inbox' },
       { id: 'weekly', label: 'tab_weekly', icon: 'spark' },
     ];
 
@@ -3166,7 +4535,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       const inputDraft = typeof props.useInput === 'function'
         ? props.useInput((state) => (state && typeof state.draft === 'string' ? state.draft : ''))
         : '';
-      const [tab, setTab] = useState(() => (store.ui && (store.ui.tab === 'calendar' || store.ui.tab === 'weekly') ? store.ui.tab : 'memos'));
+      const [tab, setTab] = useState(() => (store.ui && ['calendar', 'weekly', 'projects', 'inbox'].includes(store.ui.tab) ? store.ui.tab : 'memos'));
       const [filter, setFilter] = useState(() => (store.ui && store.ui.filter) || 'all');
       const [draft, setDraft] = useState('');
       const [editingId, setEditingId] = useState(null);
@@ -3175,6 +4544,13 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       const [menuOpen, setMenuOpen] = useState(false);
       const [aiOpen, setAiOpen] = useState(false);
       const [tagOpen, setTagOpen] = useState(false);
+      const [projectSheet, setProjectSheet] = useState(null);
+      const [taskSheet, setTaskSheet] = useState(null);
+      const [selectedProjectId, setSelectedProjectId] = useState(() => (store.projects && store.projects[0] ? store.projects[0].id : null));
+      const [inbox, setInbox] = useState({ status: null, messages: [], syncing: false, error: null, loaded: false });
+      const [inboxGuideClosed, setInboxGuideClosed] = useState(() => {
+        try { return localStorage.getItem('dsh.pm-workbench.inbox.guide') === '1'; } catch (err) { return false; }
+      });
       const [bulk, setBulk] = useState(null);
       const [calendarFocus, setCalendarFocus] = useState(null);
       const toastTimer = useRef(null);
@@ -3182,8 +4558,29 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       const bodyRef = useRef(null);
 
       useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
+      useEffect(() => {
+        setStore((current) => {
+          const next = advanceDailyMemos(current.memos, now);
+          return next.changed ? { ...current, memos: next.memos } : current;
+        });
+      }, [now]);
       useEffect(() => { if (bodyRef.current) bodyRef.current.scrollTop = 0; }, [tab]);
       useEffect(() => { if (saveError) showToast(t('save_failed'), undefined, true); }, [saveError]);
+      useEffect(() => { loadInboxStatus(); }, []);
+      useEffect(() => {
+        if (tab === 'inbox' && inbox.status && inbox.status.configured && !inbox.loaded && !inbox.syncing) {
+          syncInbox(false);
+        }
+      }, [tab, inbox.status, inbox.loaded, inbox.syncing]);
+      useEffect(() => {
+        if (!store.projects.length) {
+          if (selectedProjectId) setSelectedProjectId(null);
+          return;
+        }
+        if (!store.projects.some((project) => project.id === selectedProjectId)) {
+          setSelectedProjectId(store.projects[0].id);
+        }
+      }, [store.projects, selectedProjectId]);
       useEffect(() => {
         if (!syncNotice) return;
         if (syncNotice.kind === 'conflict') showToast(t('sync_conflict'), undefined, true);
@@ -3331,6 +4728,213 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
         showToast(t('tag_changed'));
       }
 
+      async function inboxRequest(payload) {
+        const response = await fetch('/pm-workbench/inbox', {
+          method: payload ? 'POST' : 'GET',
+          headers: payload ? { 'content-type': 'application/json' } : undefined,
+          body: payload ? JSON.stringify(payload) : undefined,
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.ok === false) throw new Error(data.error || `HTTP ${response.status}`);
+        return data;
+      }
+
+      async function loadInboxStatus() {
+        try {
+          const data = await inboxRequest(null);
+          setInbox((current) => ({
+            ...current,
+            status: {
+              configured: !!data.configured,
+              email: data.email || '',
+              lastSyncAt: data.lastSyncAt || null,
+              channels: Array.isArray(data.channels) ? data.channels : [],
+            },
+            error: null,
+          }));
+        } catch (err) {
+          setInbox((current) => ({ ...current, status: { configured: false, email: '', lastSyncAt: null, channels: [] }, error: String(err.message || err) }));
+        }
+      }
+
+      async function connectInbox(payload) {
+        try {
+          setInbox((current) => ({ ...current, error: null }));
+          const data = await inboxRequest({ action: 'config', ...payload });
+          setInbox((current) => ({
+            ...current,
+            status: { configured: true, email: data.email || payload.email, lastSyncAt: data.lastSyncAt || null, channels: Array.isArray(data.channels) ? data.channels : [] },
+            messages: [],
+            loaded: true,
+            error: null,
+          }));
+          await syncInbox(true);
+          return {};
+        } catch (err) {
+          const message = String(err.message || err);
+          setInbox((current) => ({ ...current, error: message }));
+          return { error: message };
+        }
+      }
+
+      async function syncInbox(force) {
+        setInbox((current) => ({ ...current, syncing: true, error: null }));
+        try {
+          const data = await inboxRequest({ action: 'sync', force: force === true });
+          setInbox((current) => ({
+            ...current,
+            status: {
+              configured: true,
+              email: (current.status && current.status.email) || '',
+              lastSyncAt: data.lastSyncAt || null,
+              channels: (current.status && current.status.channels) || [],
+            },
+            messages: Array.isArray(data.messages) ? data.messages : [],
+            syncing: false,
+            loaded: true,
+            error: null,
+          }));
+        } catch (err) {
+          setInbox((current) => ({ ...current, syncing: false, loaded: true, error: String(err.message || err) }));
+        }
+      }
+
+      async function disconnectInbox() {
+        if (typeof window !== 'undefined' && typeof window.confirm === 'function'
+          && !window.confirm(t('inbox_disconnect_confirm'))) return;
+        try {
+          await inboxRequest({ action: 'disconnect' });
+          setInbox({ status: { configured: false, email: '', lastSyncAt: null, channels: [] }, messages: [], syncing: false, error: null, loaded: false });
+        } catch (err) {
+          setInbox((current) => ({ ...current, error: String(err.message || err) }));
+        }
+      }
+
+      function addMailToMemo(message) {
+        if (!message) return;
+        const from = cleanString(message.from, 300) || '未知发件人';
+        const body = String(message.text || message.preview || '').slice(0, 4000);
+        const date = message.date ? new Date(message.date).toLocaleString('zh-CN') : '';
+        const memo = normalizeMemo({
+          text: message.subject || '(无主题)',
+          note: `来自：${from}${date ? `\n时间：${date}` : ''}\n\n${body}`.slice(0, 4000),
+          tags: ['邮件'],
+        });
+        if (!memo) return;
+        setStore((current) => ({
+          ...current,
+          memos: [memo].concat(current.memos),
+          tagOptions: normalizeTagList((current.tagOptions || DEFAULT_TAGS).concat(['邮件']), true),
+        }));
+        showToast(t('inbox_added'), { label: t('inbox_open_memo'), run: () => switchTab('memos') });
+      }
+
+      function openProjectFromMemo(memo) {
+        if (!memo) return;
+        setProjectSheet({
+          project: null,
+          memoId: memo.id,
+          initial: {
+            name: memo.text,
+            description: memo.note || '',
+            owner: t('task_self'),
+            role: '',
+            startDate: ymd(now),
+            dueDate: memo.dueDate || ymd(addDays(now, 13)),
+          },
+        });
+      }
+
+      function saveProject(form) {
+        const source = projectSheet;
+        if (!source) return;
+        const timestamp = new Date().toISOString();
+        const existing = source.project;
+        const projectId = existing ? existing.id : uid('p');
+        setStore((current) => {
+          let memos = current.memos;
+          let tagOptions = current.tagOptions || DEFAULT_TAGS;
+          let project;
+          let projects = (current.projects || []).slice();
+          if (existing) {
+            project = normalizeProject({ ...existing, ...form, id: existing.id, tasks: existing.tasks, updatedAt: timestamp });
+            if (!project) return current;
+            projects = projects.map((entry) => (entry.id === project.id ? project : entry));
+          } else {
+            project = normalizeProject({ ...form, id: projectId, tasks: [], createdAt: timestamp, updatedAt: timestamp });
+            if (!project) return current;
+            if (source.memoId) {
+              const memo = current.memos.find((entry) => entry.id === source.memoId);
+              if (memo) {
+                const task = normalizeProjectTask({
+                  title: memo.text,
+                  owner: t('task_self'),
+                  role: '',
+                  startDate: ymd(now),
+                  dueDate: memo.dueDate || ymd(now),
+                  progress: memo.done ? 100 : 0,
+                });
+                if (task) project.tasks.push(task);
+                memos = current.memos.map((entry) => (entry.id === memo.id
+                  ? { ...entry, projectId: project.id, tags: uniqueTags(entry.tags.concat(['项目'])), updatedAt: timestamp }
+                  : entry));
+                tagOptions = normalizeTagList(tagOptions.concat(['项目']), true);
+              }
+            }
+            projects = [project].concat(projects);
+          }
+          if (!project) return current;
+          return { ...current, projects, memos, tagOptions };
+        });
+        setSelectedProjectId(existing ? existing.id : projectId);
+        setProjectSheet(null);
+        showToast(existing ? t('saved') : t('project_created'));
+      }
+
+      function saveProjectTask(form) {
+        const source = taskSheet;
+        if (!source) return;
+        const timestamp = new Date().toISOString();
+        setStore((current) => ({
+          ...current,
+          projects: (current.projects || []).map((project) => {
+            if (project.id !== source.projectId) return project;
+            const tasks = source.task
+              ? project.tasks.map((task) => (task.id === source.task.id
+                ? normalizeProjectTask({ ...task, ...form, id: task.id, updatedAt: timestamp })
+                : task))
+              : project.tasks.concat([normalizeProjectTask({ ...form, createdAt: timestamp, updatedAt: timestamp })].filter(Boolean));
+            return { ...project, tasks, updatedAt: timestamp };
+          }),
+        }));
+        setTaskSheet(null);
+        showToast(t('task_saved'));
+      }
+
+      function reorderProjectTasks(projectId, fromId, toId) {
+        const timestamp = new Date().toISOString();
+        setStore((current) => ({
+          ...current,
+          projects: (current.projects || []).map((project) => {
+            if (project.id !== projectId) return project;
+            const from = project.tasks.findIndex((task) => task.id === fromId);
+            const to = project.tasks.findIndex((task) => task.id === toId);
+            if (from < 0 || to < 0 || from === to) return project;
+            return { ...project, tasks: reorderTaskList(project.tasks, fromId, toId), updatedAt: timestamp };
+          }),
+        }));
+      }
+
+      function repairProjectDependencyDates(projectId) {
+        setStore((current) => ({
+          ...current,
+          projects: (current.projects || []).map((project) => (
+            project.id === projectId ? repairDependencyDates(project) : project
+          )),
+        }));
+        showToast(t('deps_repaired'));
+      }
+
       function toggleEntry(entry) {
         if (entry && entry.memoId) toggleMemo(entry.memoId);
       }
@@ -3340,6 +4944,40 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
         changeFilter('all');
         setHighlightId(id);
         setTimeout(() => setHighlightId(null), 1800);
+      }
+
+      function openProject(projectId) {
+        if (!store.projects.some((project) => project.id === projectId)) return;
+        switchTab('projects');
+        setSelectedProjectId(projectId);
+      }
+
+      function openProjectTask(projectId, taskId) {
+        const project = (store.projects || []).find((entry) => entry.id === projectId);
+        const task = project && (project.tasks || []).find((entry) => entry.id === taskId);
+        if (!project || !task) return;
+        switchTab('projects');
+        setSelectedProjectId(project.id);
+        setTaskSheet({ projectId: project.id, project, task });
+      }
+
+      function toggleProjectTask(entry) {
+        if (!entry || entry.kind !== 'task') return;
+        const timestamp = new Date().toISOString();
+        setStore((current) => ({
+          ...current,
+          projects: (current.projects || []).map((project) => {
+            if (project.id !== entry.projectId) return project;
+            return {
+              ...project,
+              tasks: project.tasks.map((task) => (task.id === entry.taskId
+                ? { ...task, progress: task.progress >= 100 ? 0 : 100, updatedAt: timestamp }
+                : task)),
+              updatedAt: timestamp,
+            };
+          }),
+        }));
+        showToast(t('task_saved'));
       }
 
       function sendMemoToChat(id) {
@@ -3464,6 +5102,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
                 ...emptyStore(),
                 memos: safeArray(parsed.memos).map(normalizeMemo).filter(Boolean),
                 events: safeArray(parsed.events).map(normalizeEvent).filter(Boolean),
+                projects: safeArray(parsed.projects).map(normalizeProject).filter(Boolean),
                 reports: parsed.reports && typeof parsed.reports === 'object' ? parsed.reports : {},
                 tagOptions: normalizeTagList(parsed.tagOptions, true),
               }
@@ -3490,6 +5129,8 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       const ringStats = weekStats(store.memos, store.events, now, now);
       const ringTotal = ringStats.done.length + ringStats.open.length;
       const ringRate = ringTotal ? ringStats.done.length / ringTotal : 0;
+      const selectedProject = (store.projects || []).find((project) => project.id === selectedProjectId) || (store.projects || [])[0] || null;
+      const showInboxGuide = !!(inbox.status && !inbox.status.configured && !inboxGuideClosed);
 
       const toastNode = toast
         ? h('div', { className: 'pmw-toast', role: 'status' },
@@ -3544,6 +5185,42 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           )
           : null,
 
+        showInboxGuide
+          ? h('div', {
+            className: 'pmw-inbox-guide',
+            role: 'button',
+            tabIndex: 0,
+            onClick: () => {
+              setInboxGuideClosed(true);
+              try { localStorage.setItem('dsh.pm-workbench.inbox.guide', '1'); } catch (err) { /* ignore */ }
+              switchTab('inbox');
+            },
+            onKeyDown: (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                setInboxGuideClosed(true);
+                try { localStorage.setItem('dsh.pm-workbench.inbox.guide', '1'); } catch (err) { /* ignore */ }
+                switchTab('inbox');
+              }
+            },
+          },
+          h(Icon, { name: 'inbox', size: 14 }),
+          h('span', null, t('inbox_guide')),
+          h('b', null, t('inbox_guide_action')),
+          h('button', {
+            type: 'button',
+            className: 'pmw-inbox-guide-close',
+            title: t('close'),
+            'aria-label': t('close'),
+            onClick: (event) => {
+              event.stopPropagation();
+              setInboxGuideClosed(true);
+              try { localStorage.setItem('dsh.pm-workbench.inbox.guide', '1'); } catch (err) { /* ignore */ }
+            },
+          }, '×'),
+          )
+          : null,
+
         h('nav', { className: 'pmw-tabs', role: 'tablist', 'aria-label': t('title') },
           TABS.map((item) => h('button', {
             key: item.id,
@@ -3552,7 +5229,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
             className: 'pmw-tab' + (tab === item.id ? ' is-active' : ''),
             'aria-selected': tab === item.id,
             onClick: () => switchTab(item.id),
-          }, h(Icon, { name: item.icon, size: 15 }), t(item.label))),
+          }, h(Icon, { name: item.icon, size: 14 }), t(item.label))),
         ),
 
         h('div', { className: 'pmw-body', ref: bodyRef, role: 'tabpanel' },
@@ -3572,17 +5249,46 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
               onSave: saveMemo,
               onDelete: deleteMemo,
               onPin: pinMemo,
+              onCreateProject: openProjectFromMemo,
+              onOpenProject: openProject,
             })
             : tab === 'calendar'
               ? h(CalendarView, {
                 now,
                 memos: store.memos,
+                projects: store.projects,
                 focusDate: calendarFocus,
                 onFocusApplied: () => setCalendarFocus(null),
                 onToggleEntry: toggleEntry,
                 onOpenMemo: openMemo,
+                onOpenTask: openProjectTask,
+                onToggleTask: toggleProjectTask,
               })
-              : h(WeeklyView, {
+              : tab === 'projects'
+                ? h(ProjectsView, {
+                  now,
+                  projects: store.projects,
+                  selectedId: selectedProjectId,
+                  onSelect: setSelectedProjectId,
+                  onEditProject: (project) => setProjectSheet({ project, memoId: null }),
+                  onAddTask: (project) => setTaskSheet({ projectId: project.id, project, task: null }),
+                  onEditTask: (project, task) => setTaskSheet({ projectId: project.id, project, task }),
+                  onReorderTasks: reorderProjectTasks,
+                  onRepairDependencies: repairProjectDependencyDates,
+                })
+                : tab === 'inbox'
+                  ? h(InboxView, {
+                    now,
+                    status: inbox.status,
+                    messages: inbox.messages,
+                    syncing: inbox.syncing,
+                    error: inbox.error,
+                    onConnect: connectInbox,
+                    onSync: syncInbox,
+                    onDisconnect: disconnectInbox,
+                    onAddMemo: addMailToMemo,
+                  })
+                  : h(WeeklyView, {
                 now,
                 memos: store.memos,
                 events: store.events,
@@ -3605,9 +5311,25 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
               onBulk: openBulk,
               onManageTags: () => setTagOpen(true),
             }))
-          : null,
+          : tab === 'projects'
+            ? h('div', { className: 'pmw-dock pmw-project-dock' },
+              toastNode,
+              h('button', {
+                type: 'button',
+                className: 'pmw-btn is-primary',
+                onClick: () => setProjectSheet({ project: null, memoId: null }),
+              }, '+ ', t('project_new')),
+              selectedProject
+                ? h('button', {
+                  type: 'button',
+                  className: 'pmw-btn is-ghost',
+                  onClick: () => setTaskSheet({ projectId: selectedProject.id, project: selectedProject, task: null }),
+                }, '+ ', t('project_new_task'))
+                : null,
+            )
+            : null,
 
-        tab !== 'memos' ? toastNode : null,
+        tab !== 'memos' && tab !== 'projects' ? toastNode : null,
 
         h(AISheet, {
           open: aiOpen,
@@ -3628,6 +5350,22 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           onAdd: addTagOption,
           onRename: renameTagOption,
           onDelete: deleteTagOption,
+        }),
+
+        h(ProjectSheet, {
+          open: !!projectSheet,
+          project: projectSheet ? projectSheet.project : null,
+          initial: projectSheet ? projectSheet.initial : null,
+          onClose: () => setProjectSheet(null),
+          onSave: saveProject,
+        }),
+
+        h(TaskSheet, {
+          open: !!(taskSheet && taskSheet.project),
+          project: taskSheet ? taskSheet.project : null,
+          task: taskSheet ? taskSheet.task : null,
+          onClose: () => setTaskSheet(null),
+          onSave: saveProjectTask,
         }),
 
         h('input', {
@@ -3690,6 +5428,8 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           isBulkDraft,
           buildMemoPrompt,
           groupMemos,
+          groupOverdue,
+          advanceDailyMemos,
           filterMemos,
           weekStats,
           weekRange,
@@ -3700,6 +5440,12 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           sanitizeParseResult,
           normalizeMemo,
           normalizeEvent,
+          normalizeProject,
+          normalizeProjectTask,
+          projectProgress,
+          reorderTaskList,
+          dependencyConflicts,
+          repairDependencyDates,
           migrateLegacy,
           ymd,
           addDays,
@@ -3707,7 +5453,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           endOfWeek,
           parseYmd,
           dueSummary,
-          components: { Workbench, Composer, MemoItem, MemosView, CalendarView, WeeklyView, AISheet },
+          components: { Workbench, Composer, MemoItem, MemosView, CalendarView, WeeklyView, AISheet, ProjectsView, ProjectSheet, TaskSheet, InboxView, InboxSetup },
         });
       } catch (err) {
         /* the test seam must never break the plugin */

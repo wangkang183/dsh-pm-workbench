@@ -5,6 +5,8 @@
  *
  *   GET  /pm-workbench/ai   → health: which provider/model would be used
  *   POST /pm-workbench/ai   → { task: 'parse' | 'summary', ... }
+ *   GET  /pm-workbench/inbox → mailbox status
+ *   POST /pm-workbench/inbox → config / sync / disconnect
  *
  * The browser never sees a key and never talks to a model provider directly.
  * The model route is the harness default (`agentDefaultModel`), with a live
@@ -16,9 +18,11 @@
  */
 import { loadState, saveState } from './store.js';
 import { createTools } from './tools.js';
+import { disconnectInbox, getInboxStatus, saveInboxConfig, syncInbox } from './inbox.js';
 
 const ROUTE = '/pm-workbench/ai';
 const DATA_ROUTE = '/pm-workbench/data';
+const INBOX_ROUTE = '/pm-workbench/inbox';
 const BODY_LIMIT = 256 * 1024;
 const DATA_BODY_LIMIT = 1024 * 1024;
 const MODEL_TIMEOUT_MS = 45_000;
@@ -34,6 +38,7 @@ export function apply(ctx) {
   if (!server || typeof server.register !== 'function') return;
   registerRoute(ctx, server, ROUTE, handle);
   registerRoute(ctx, server, DATA_ROUTE, handleData);
+  registerRoute(ctx, server, INBOX_ROUTE, handleInbox);
   registerTools(ctx);
   registerPrompt(ctx);
 }
@@ -82,6 +87,7 @@ function registerPrompt(ctx) {
         '工作台待办：当用户用自然语言说「记一下 / 加入待办 / 提醒我 / 存到工作台」时，直接调用 pm_memo_add 写入，不要只回复确认。',
         '一条消息里有多个事项就放进 items；相对日期要换算成 YYYY-MM-DD，时间用 HH:mm。',
         '查询用 pm_memo_list，完成/修改用 pm_memo_update；删除前必须向用户确认并传 confirm:true。',
+        '项目管理：创建项目用 pm_project_create，查询用 pm_project_list；加任务用 pm_project_task_add；更新任务进度、负责人、岗位、日期或依赖用 pm_project_task_update。用户说「项目/任务进度到多少」时直接更新并回报项目总进度。',
       ].join(''),
     }));
   } catch (err) {
@@ -172,6 +178,51 @@ async function handleData(ctx, req, res) {
     return;
   }
   sendJson(res, 200, { ok: true, rev: result.state.rev, updatedAt: result.state.updatedAt });
+}
+
+async function handleInbox(ctx, req, res) {
+  if (req.method === 'OPTIONS') { head(res, 204); return; }
+  if (req.method === 'GET') {
+    try {
+      const status = await getInboxStatus(ctx);
+      sendJson(res, 200, { ok: true, ...status });
+    } catch (err) {
+      fail(res, 500, String((err && err.message) || err), 'inbox-status');
+    }
+    return;
+  }
+  if (req.method !== 'POST') { fail(res, 405, 'method-not-allowed', 'method'); return; }
+  let payload;
+  try {
+    payload = JSON.parse(await readBody(req, BODY_LIMIT));
+  } catch (err) {
+    fail(res, 400, 'invalid-json', 'bad-request');
+    return;
+  }
+  const action = payload && payload.action;
+  try {
+    if (action === 'config') {
+      const result = await saveInboxConfig(ctx, payload);
+      const status = await getInboxStatus(ctx);
+      sendJson(res, 200, { ok: true, ...status, messages: result.messages });
+      return;
+    }
+    if (action === 'sync') {
+      const result = await syncInbox(ctx, payload.force === true);
+      sendJson(res, 200, { ok: true, ...result });
+      return;
+    }
+    if (action === 'disconnect') {
+      const result = await disconnectInbox(ctx);
+      sendJson(res, 200, { ok: true, ...result });
+      return;
+    }
+    fail(res, 400, 'unknown-action', 'bad-request');
+  } catch (err) {
+    const message = String((err && err.message) || err);
+    const code = /授权码|登录|AUTH|LOGIN|invalid credentials/i.test(message) ? 'auth' : 'inbox';
+    fail(res, 400, message, code);
+  }
 }
 
 async function resolveRoute(ctx) {

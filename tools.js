@@ -11,6 +11,8 @@ import {
   isTimeText,
   loadState,
   normalizeMemo,
+  normalizeProject,
+  normalizeProjectTask,
   uniqueTags,
   updateState,
 } from './store.js';
@@ -52,6 +54,7 @@ function memoLine(memo) {
   bits.push(`id=${memo.id}`);
   if (memo.tags && memo.tags.length) bits.push(`标签=${memo.tags.join(',')}`);
   if (memo.note) bits.push(`备注=${oneLine(memo.note, 120)}`);
+  if (memo.repeat === 'daily') bits.push('每天');
   const due = dueText(memo);
   if (due) bits.push(`截止=${due}`);
   if (memo.pinned) bits.push('置顶');
@@ -149,6 +152,7 @@ function addMemos(args) {
       text: args.text,
       note: args.note,
       tags: args.tags,
+      repeat: args.repeat,
       dueDate: args.dueDate,
       dueTime: args.dueTime,
     }];
@@ -159,7 +163,8 @@ function addMemos(args) {
       text: item && item.text,
       note: item && item.note,
       tags: item && item.tags,
-      dueDate: item && item.dueDate,
+      repeat: item && item.repeat,
+      dueDate: (item && item.dueDate) || (item && item.repeat === 'daily' ? todayText() : null),
       dueTime: item && item.dueTime,
       ai: false,
     });
@@ -188,12 +193,18 @@ function updateMemo(args) {
     }
     if (args.tags !== undefined) memo.tags = uniqueTags(args.tags);
     if (args.note !== undefined) memo.note = String(args.note).replace(/\r\n?/g, '\n').trim().slice(0, MAX_TEXT);
+    if (args.repeat !== undefined) {
+      memo.repeat = args.repeat === 'daily' ? 'daily' : null;
+      memo.seriesId = memo.repeat ? (memo.seriesId || `r_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`) : null;
+      if (memo.repeat && !memo.dueDate) memo.dueDate = todayText();
+    }
     if (args.done !== undefined) {
       memo.done = args.done === true;
       memo.doneAt = memo.done ? new Date().toISOString() : null;
     }
     if (args.pinned !== undefined) memo.pinned = args.pinned === true;
     normalizeDue(args, memo);
+    if (memo.repeat === 'daily' && !memo.dueDate) memo.dueDate = todayText();
     memo.updatedAt = new Date().toISOString();
     return memo;
   });
@@ -239,6 +250,181 @@ function stats(args) {
     overdue.length ? `逾期：\n${overdue.slice(0, 8).map(memoLine).join('\n')}` : '',
   ].filter(Boolean).join('\n');
 }
+
+function projectProgress(project) {
+  if (!project.tasks.length) return 0;
+  return Math.round(project.tasks.reduce((sum, task) => sum + task.progress, 0) / project.tasks.length);
+}
+
+function projectLine(project) {
+  return `- [${project.id}] ${project.name} | 负责人=${project.owner}${project.role ? ' · ' + project.role : ''} | 进度=${projectProgress(project)}% | 任务=${project.tasks.length}`;
+}
+
+function taskLine(task) {
+  return `  - [${task.id}] ${task.title} | 负责人=${task.owner}${task.role ? ' · ' + task.role : ''} | 进度=${task.progress}% | 截止=${task.dueDate || '未设'}${task.dependsOn.length ? ' | 依赖=' + task.dependsOn.join(',') : ''}`;
+}
+
+function findProject(state, args) {
+  const id = String(args.projectId || '').trim();
+  if (id) {
+    const project = state.projects.find((entry) => entry.id === id);
+    if (!project) throw new Error(`找不到项目 ${id}`);
+    return project;
+  }
+  const query = String(args.project || args.query || '').trim();
+  if (!query) throw new Error('请提供 projectId 或项目名称。');
+  const matches = state.projects.filter((project) => project.name.includes(query));
+  if (!matches.length) throw new Error(`找不到项目「${query}」`);
+  if (matches.length > 1) throw new Error(`匹配到多个项目：${matches.map((project) => project.name + '(' + project.id + ')').join('、')}`);
+  return matches[0];
+}
+
+function findTask(project, args) {
+  const id = String(args.taskId || '').trim();
+  if (id) {
+    const task = project.tasks.find((entry) => entry.id === id);
+    if (!task) throw new Error(`找不到任务 ${id}`);
+    return task;
+  }
+  const query = String(args.task || args.query || '').trim();
+  if (!query) throw new Error('请提供 taskId 或任务名称。');
+  const matches = project.tasks.filter((task) => task.title.includes(query));
+  if (!matches.length) throw new Error(`项目「${project.name}」里找不到任务「${query}」`);
+  if (matches.length > 1) throw new Error(`匹配到多个任务：${matches.map((task) => task.title + '(' + task.id + ')').join('、')}`);
+  return matches[0];
+}
+
+function hasDependencyCycle(project, taskId, dependsOn) {
+  const byId = new Map(project.tasks.map((task) => [task.id, task]));
+  const visit = (id, seen) => {
+    if (id === taskId) return true;
+    if (seen.has(id)) return false;
+    seen.add(id);
+    const task = byId.get(id);
+    if (!task) return false;
+    return task.dependsOn.some((next) => visit(next, seen));
+  };
+  return dependsOn.some((id) => visit(id, new Set()));
+}
+
+function listProjects() {
+  const state = loadState().store;
+  if (!state.projects.length) return '工作台项目：还没有项目。';
+  const lines = [`工作台项目：共 ${state.projects.length} 个。`];
+  for (const project of state.projects) {
+    lines.push(projectLine(project));
+    for (const task of project.tasks) lines.push(taskLine(task));
+  }
+  return lines.join('\n');
+}
+
+function createProject(args) {
+  const startDate = isDateText(args.startDate) ? String(args.startDate) : todayText();
+  const fallbackDue = (() => {
+    const date = new Date();
+    date.setDate(date.getDate() + 14);
+    return ymd(date);
+  })();
+  const dueDate = isDateText(args.dueDate) ? String(args.dueDate) : (args.dueDate ? fallbackDue : null);
+  const project = normalizeProject({
+    name: args.name,
+    description: args.description,
+    owner: args.owner,
+    role: args.role,
+    startDate,
+    dueDate: dueDate || startDate,
+    status: 'active',
+  });
+  if (!project) throw new Error('项目名称不能为空。');
+  updateState((state) => {
+    state.projects.unshift(project);
+    return project;
+  });
+  return `已创建项目：\n${projectLine(project)}\n项目 id=${project.id}`;
+}
+
+function updateProject(args) {
+  const saved = updateState((state) => {
+    const project = findProject(state, args);
+    if (args.name !== undefined) {
+      const name = String(args.name).replace(/\s+/g, ' ').trim().slice(0, 120);
+      if (!name) throw new Error('项目名称不能为空。');
+      project.name = name;
+    }
+    if (args.description !== undefined) project.description = String(args.description).trim().slice(0, 2000);
+    if (args.owner !== undefined) project.owner = String(args.owner).trim().slice(0, 60) || '我';
+    if (args.role !== undefined) project.role = String(args.role).trim().slice(0, 60);
+    if (args.startDate !== undefined) project.startDate = isDateText(args.startDate) ? String(args.startDate) : null;
+    if (args.dueDate !== undefined) project.dueDate = isDateText(args.dueDate) ? String(args.dueDate) : null;
+    if (args.status !== undefined) project.status = args.status === 'done' ? 'done' : 'active';
+    if (args.progress !== undefined) {
+      const progress = Number(args.progress);
+      if (!Number.isFinite(progress)) throw new Error('progress 必须是 0-100 的数字。');
+      const value = Math.max(0, Math.min(100, Math.round(progress)));
+      for (const task of project.tasks) task.progress = value;
+    }
+    project.updatedAt = new Date().toISOString();
+    return project;
+  });
+  return `已更新项目：\n${projectLine(saved.result)}`;
+}
+
+function addProjectTask(args) {
+  const saved = updateState((state) => {
+    const project = findProject(state, args);
+    const dependsOn = (Array.isArray(args.dependsOn) ? args.dependsOn : [])
+      .map((id) => String(id).trim())
+      .filter((id) => id && project.tasks.some((task) => task.id === id));
+    const task = normalizeProjectTask({
+      title: args.title,
+      owner: args.owner,
+      role: args.role,
+      startDate: args.startDate,
+      dueDate: args.dueDate || project.dueDate || todayText(),
+      progress: args.progress,
+      dependsOn,
+    });
+    if (!task) throw new Error('任务名称不能为空。');
+    if (hasDependencyCycle(project, task.id, task.dependsOn)) throw new Error('依赖关系会形成循环。');
+    project.tasks.push(task);
+    project.updatedAt = new Date().toISOString();
+    return { project, task };
+  });
+  return `已新增任务：\n${taskLine(saved.result.task)}\n项目进度=${projectProgress(saved.result.project)}%`;
+}
+
+function updateProjectTask(args) {
+  const saved = updateState((state) => {
+    const project = findProject(state, args);
+    const task = findTask(project, args);
+    if (args.title !== undefined) {
+      const title = String(args.title).replace(/\s+/g, ' ').trim().slice(0, 200);
+      if (!title) throw new Error('任务名称不能为空。');
+      task.title = title;
+    }
+    if (args.owner !== undefined) task.owner = String(args.owner).trim().slice(0, 60) || '我';
+    if (args.role !== undefined) task.role = String(args.role).trim().slice(0, 60);
+    if (args.startDate !== undefined) task.startDate = isDateText(args.startDate) ? String(args.startDate) : null;
+    if (args.dueDate !== undefined) task.dueDate = isDateText(args.dueDate) ? String(args.dueDate) : null;
+    if (args.progress !== undefined) {
+      const progress = Math.round(Number(args.progress));
+      if (!Number.isFinite(progress)) throw new Error('progress 必须是 0-100 的数字。');
+      task.progress = Math.max(0, Math.min(100, progress));
+    }
+    if (args.dependsOn !== undefined) {
+      const dependsOn = (Array.isArray(args.dependsOn) ? args.dependsOn : [])
+        .map((id) => String(id).trim())
+        .filter((id) => id && id !== task.id && project.tasks.some((entry) => entry.id === id));
+      if (hasDependencyCycle(project, task.id, dependsOn)) throw new Error('依赖关系会形成循环。');
+      task.dependsOn = dependsOn;
+    }
+    task.updatedAt = new Date().toISOString();
+    project.updatedAt = task.updatedAt;
+    return { project, task };
+  });
+  return `已更新任务：\n${taskLine(saved.result.task)}\n项目进度=${projectProgress(saved.result.project)}%`;
+}
+
 
 function tagSchema() {
   return {
@@ -292,7 +478,7 @@ export function createTools() {
     },
     {
       name: 'pm_memo_add',
-      description: '把用户口述或粘贴的事项写入工作台待办。一句话里有多个事项时放进 items（最多 20 条）。相对日期要由你根据当前时间换算成 YYYY-MM-DD，时间用 HH:mm。',
+      description: '把用户口述或粘贴的事项写入工作台待办。一句话里有多个事项时放进 items（最多 20 条）。相对日期要由你根据当前时间换算成 YYYY-MM-DD，时间用 HH:mm；repeat=daily 表示每天重复。',
       parameters: parameters({
         items: {
           type: 'array',
@@ -304,6 +490,7 @@ export function createTools() {
               text: { type: 'string', description: '待办正文。' },
               note: { type: 'string', description: '可选备注，可多行。' },
               tags: tagSchema(),
+              repeat: { type: 'string', enum: ['daily'], description: 'daily=每天重复。' },
               dueDate: { type: 'string', description: '截止日期 YYYY-MM-DD。' },
               dueTime: { type: 'string', description: '截止时间 HH:mm。' },
             },
@@ -313,6 +500,7 @@ export function createTools() {
         text: { type: 'string', description: '只新增一条时的正文（可代替 items）。' },
         note: { type: 'string', description: '只新增一条时的备注（可代替 items）。' },
         tags: tagSchema(),
+        repeat: { type: 'string', enum: ['daily'], description: 'daily=每天重复。' },
         dueDate: { type: 'string', description: '只新增一条时的截止日期。' },
         dueTime: { type: 'string', description: '只新增一条时的截止时间。' },
       }),
@@ -324,13 +512,14 @@ export function createTools() {
     },
     {
       name: 'pm_memo_update',
-      description: '修改工作台待办：完成/重开、改正文/备注、标签、截止日期、置顶。用 id 精确指定，或用 query 提供能唯一匹配正文的片段；匹配多条时会返回候选 id。',
+      description: '修改工作台待办：完成/重开、改正文/备注、标签、截止日期、置顶、每天重复。用 id 精确指定，或用 query 提供能唯一匹配正文的片段；匹配多条时会返回候选 id。',
       parameters: parameters({
         id: { type: 'string', description: '待办 id（从 pm_memo_list 获取）。' },
         query: { type: 'string', description: '没有 id 时，用一段唯一的正文片段匹配。' },
         text: { type: 'string', description: '新的正文。' },
         note: { type: 'string', description: '新的备注；空字符串清除。' },
         tags: tagSchema(),
+        repeat: { type: 'string', enum: ['daily', 'none'], description: 'daily=每天重复；none=取消重复。' },
         done: { type: 'boolean', description: 'true 标记完成，false 重开。' },
         pinned: { type: 'boolean', description: '是否置顶。' },
         dueDate: { type: 'string', description: '新的截止日期 YYYY-MM-DD；空字符串清除。' },
@@ -367,6 +556,105 @@ export function createTools() {
       execute: async (args, exec) => {
         exec.signal.throwIfAborted();
         return stats(args);
+      },
+    },
+    {
+      name: 'pm_project_list',
+      description: '列出工作台里的项目、任务、负责人、岗位、截止日期、依赖和进度。回答「项目进度」「谁在做什么」「任务到哪了」时先调用。',
+      parameters: parameters({}),
+      output: textOutput(),
+      execute: async (args, exec) => {
+        exec.signal.throwIfAborted();
+        return listProjects();
+      },
+    },
+    {
+      name: 'pm_project_create',
+      description: '在工作台创建一个项目。项目创建后可以用 pm_project_task_add 添加任务。',
+      parameters: parameters({
+        name: { type: 'string', description: '项目名称。' },
+        description: { type: 'string', description: '项目描述，可选。' },
+        owner: { type: 'string', description: '项目负责人，不填默认「我」。' },
+        role: { type: 'string', description: '岗位，可选。' },
+        startDate: { type: 'string', description: '开始日期 YYYY-MM-DD。' },
+        dueDate: { type: 'string', description: '截止日期 YYYY-MM-DD。' },
+      }, ['name']),
+      output: textOutput(),
+      execute: async (args, exec) => {
+        exec.signal.throwIfAborted();
+        return createProject(args);
+      },
+    },
+    {
+      name: 'pm_project_update',
+      description: '修改项目信息：名称、描述、负责人、岗位、起止日期、状态。',
+      parameters: parameters({
+        projectId: { type: 'string', description: '项目 id。' },
+        project: { type: 'string', description: '项目名称片段（没有 id 时用）。' },
+        name: { type: 'string', description: '新项目名称。' },
+        description: { type: 'string', description: '新描述。' },
+        owner: { type: 'string', description: '项目负责人。' },
+        role: { type: 'string', description: '岗位。' },
+        startDate: { type: 'string', description: '开始日期 YYYY-MM-DD。' },
+        dueDate: { type: 'string', description: '截止日期 YYYY-MM-DD。' },
+        status: { type: 'string', enum: ['active', 'done'], description: '项目状态。' },
+        progress: { type: 'integer', minimum: 0, maximum: 100, description: '把项目所有任务统一设为这个进度。' },
+      }),
+      output: textOutput(),
+      execute: async (args, exec) => {
+        exec.signal.throwIfAborted();
+        return updateProject(args);
+      },
+    },
+    {
+      name: 'pm_project_task_add',
+      description: '给项目新增任务。负责人不填默认「我」，岗位默认空；可传 dependsOn（前置任务 id 数组）。',
+      parameters: parameters({
+        projectId: { type: 'string', description: '项目 id。' },
+        project: { type: 'string', description: '项目名称片段（没有 id 时用）。' },
+        title: { type: 'string', description: '任务名称。' },
+        owner: { type: 'string', description: '负责人，不填默认「我」。' },
+        role: { type: 'string', description: '岗位，可选。' },
+        startDate: { type: 'string', description: '开始日期 YYYY-MM-DD。' },
+        dueDate: { type: 'string', description: '截止日期 YYYY-MM-DD。' },
+        progress: { type: 'integer', minimum: 0, maximum: 100, description: '进度 0-100，默认 0。' },
+        dependsOn: {
+          type: 'array',
+          items: { type: 'string' },
+          description: '前置任务 id 列表，可多个。',
+        },
+      }, ['title']),
+      output: textOutput(),
+      execute: async (args, exec) => {
+        exec.signal.throwIfAborted();
+        return addProjectTask(args);
+      },
+    },
+    {
+      name: 'pm_project_task_update',
+      description: '更新项目任务：名称、负责人、岗位、起止日期、进度、依赖。用户说「把某个任务更新到 60%」时调用。',
+      parameters: parameters({
+        projectId: { type: 'string', description: '项目 id。' },
+        project: { type: 'string', description: '项目名称片段（没有 id 时用）。' },
+        taskId: { type: 'string', description: '任务 id。' },
+        task: { type: 'string', description: '任务名称片段（没有 taskId 时用）。' },
+        query: { type: 'string', description: '任务名称片段，等价于 task。' },
+        title: { type: 'string', description: '新任务名称。' },
+        owner: { type: 'string', description: '负责人。' },
+        role: { type: 'string', description: '岗位。' },
+        startDate: { type: 'string', description: '开始日期 YYYY-MM-DD。' },
+        dueDate: { type: 'string', description: '截止日期 YYYY-MM-DD。' },
+        progress: { type: 'integer', minimum: 0, maximum: 100, description: '进度 0-100。' },
+        dependsOn: {
+          type: 'array',
+          items: { type: 'string' },
+          description: '新的前置任务 id 列表；传空数组清除。',
+        },
+      }),
+      output: textOutput(),
+      execute: async (args, exec) => {
+        exec.signal.throwIfAborted();
+        return updateProjectTask(args);
       },
     },
   ];
