@@ -1,0 +1,47 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+
+let captured = null;
+globalThis.window = { __ModuleLoader__: { load: (m) => { captured = m; } } };
+const code = fs.readFileSync(new URL('../client.js', import.meta.url), 'utf8');
+vm.runInThisContext(code, { filename: 'client.js' });
+
+assert.ok(captured, 'module not registered');
+assert.equal(captured.id, 'dsh-pm-workbench');
+
+const React = {
+  createElement: (...args) => ({ t: args[0], p: args[1], c: args[2] }),
+  useState: (v) => [typeof v === 'function' ? v() : v, () => {}],
+  useEffect: () => {},
+  useMemo: (f) => f(),
+  useRef: (v) => ({ current: v }),
+  useCallback: (f) => f,
+};
+
+const calls = [];
+const mod = captured.factory(() => React);
+assert.equal(typeof mod.apply, 'function');
+assert.ok(Array.isArray(mod.inject));
+
+const ctx = {
+  effect: (fn) => fn(),
+  slots: {
+    inject: (name, cb) => { calls.push(['inject', name]); cb(); },
+    register: (opts) => { calls.push(['register', opts.name, opts.key || opts.id || '']); return () => {}; },
+  },
+  sidebarRight: { openTab: (k) => calls.push(['openTab', k]), isExpanded: () => true },
+  sidebarRightTabs: { register: (def) => { calls.push(['tabs.register', def.id, def.kind]); return () => {}; } },
+};
+
+mod.apply(ctx);
+
+assert.ok(mod.inject.includes('sidebarRightTabs'));
+assert.ok(mod.inject.includes('slots'));
+assert.ok(calls.some((call) => call[0] === 'tabs.register' && call[1] === 'dsh-pm-workbench' && call[2] === 'pm-workbench'), 'tab type registered');
+assert.ok(calls.some((call) => call[0] === 'inject' && call[1] === 'sidebar.right.pane.tab'), 'pane slot injected');
+assert.ok(calls.some((call) => call[0] === 'register' && call[1] === 'sidebar.right.pane.tab' && call[2] === 'dsh-pm-workbench'), 'pane body registered');
+assert.ok(calls.some((call) => call[0] === 'register' && call[1] === 'conversation.session.header.corner'), 'launcher registered');
+
+console.log('smoke: ok — tab type, pane body, launcher registered');
+process.exit(0);

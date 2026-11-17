@@ -1,0 +1,46 @@
+{
+  "name": "dsh-pm-workbench",
+  "version": "2.1.0",
+  "type": "module",
+  "license": "MIT",
+  "author": "kieran.wang (https://github.com/wangkang183)",
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "todo",
+    "workbench",
+    "memo"
+  ],
+  "description": "PM workbench in the right sidebar: a notepad with tags and due dates, a calendar, an AI weekly digest, one-click send to chat, and host tools for WeChat/IM todo access.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wangkang183/dsh-pm-workbench.git"
+  },
+  "homepage": "https://github.com/wangkang183/dsh-pm-workbench#readme",
+  "bugs": {
+    "url": "https://github.com/wangkang183/dsh-pm-workbench/issues"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "store.js",
+    "tools.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": ["@deepseek-ai/dsh-client-ui-sidebar-right"]
+    }
+  }
+}
