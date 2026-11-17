@@ -51,6 +51,7 @@ function memoLine(memo) {
   const bits = [`${memo.done ? '[x]' : '[ ]'} ${oneLine(memo.text)}`];
   bits.push(`id=${memo.id}`);
   if (memo.tags && memo.tags.length) bits.push(`标签=${memo.tags.join(',')}`);
+  if (memo.note) bits.push(`备注=${oneLine(memo.note, 120)}`);
   const due = dueText(memo);
   if (due) bits.push(`截止=${due}`);
   if (memo.pinned) bits.push('置顶');
@@ -146,6 +147,7 @@ function addMemos(args) {
     ? args.items
     : [{
       text: args.text,
+      note: args.note,
       tags: args.tags,
       dueDate: args.dueDate,
       dueTime: args.dueTime,
@@ -155,6 +157,7 @@ function addMemos(args) {
   for (const item of items) {
     const memo = normalizeMemo({
       text: item && item.text,
+      note: item && item.note,
       tags: item && item.tags,
       dueDate: item && item.dueDate,
       dueTime: item && item.dueTime,
@@ -184,6 +187,7 @@ function updateMemo(args) {
       memo.text = next;
     }
     if (args.tags !== undefined) memo.tags = uniqueTags(args.tags);
+    if (args.note !== undefined) memo.note = String(args.note).replace(/\r\n?/g, '\n').trim().slice(0, MAX_TEXT);
     if (args.done !== undefined) {
       memo.done = args.done === true;
       memo.doneAt = memo.done ? new Date().toISOString() : null;
@@ -264,7 +268,7 @@ export function createTools() {
   return [
     {
       name: 'pm_memo_list',
-      description: '列出 DSH 工作台（右侧栏「工作台 → 备忘」）里的待办。用户在微信/IM 问「我有哪些待办、今天要做什么、本周完成了什么」时先调用它。返回每条待办的 id、正文、标签、截止日期和完成状态；修改前先拿到 id。',
+      description: '列出 DSH 工作台（右侧栏「工作台 → 备忘」）里的待办。用户在微信/IM 问「我有哪些待办、今天要做什么、本周完成了什么」时先调用它。返回每条待办的 id、正文、备注、标签、截止日期和完成状态；修改前先拿到 id。',
       parameters: parameters({
         status: {
           type: 'string',
@@ -298,6 +302,7 @@ export function createTools() {
             additionalProperties: false,
             properties: {
               text: { type: 'string', description: '待办正文。' },
+              note: { type: 'string', description: '可选备注，可多行。' },
               tags: tagSchema(),
               dueDate: { type: 'string', description: '截止日期 YYYY-MM-DD。' },
               dueTime: { type: 'string', description: '截止时间 HH:mm。' },
@@ -306,6 +311,7 @@ export function createTools() {
           },
         },
         text: { type: 'string', description: '只新增一条时的正文（可代替 items）。' },
+        note: { type: 'string', description: '只新增一条时的备注（可代替 items）。' },
         tags: tagSchema(),
         dueDate: { type: 'string', description: '只新增一条时的截止日期。' },
         dueTime: { type: 'string', description: '只新增一条时的截止时间。' },
@@ -318,11 +324,12 @@ export function createTools() {
     },
     {
       name: 'pm_memo_update',
-      description: '修改工作台待办：完成/重开、改正文、标签、截止日期、置顶。用 id 精确指定，或用 query 提供能唯一匹配正文的片段；匹配多条时会返回候选 id。',
+      description: '修改工作台待办：完成/重开、改正文/备注、标签、截止日期、置顶。用 id 精确指定，或用 query 提供能唯一匹配正文的片段；匹配多条时会返回候选 id。',
       parameters: parameters({
         id: { type: 'string', description: '待办 id（从 pm_memo_list 获取）。' },
         query: { type: 'string', description: '没有 id 时，用一段唯一的正文片段匹配。' },
         text: { type: 'string', description: '新的正文。' },
+        note: { type: 'string', description: '新的备注；空字符串清除。' },
         tags: tagSchema(),
         done: { type: 'boolean', description: 'true 标记完成，false 重开。' },
         pinned: { type: 'boolean', description: '是否置顶。' },

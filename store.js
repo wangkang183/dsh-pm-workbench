@@ -70,6 +70,7 @@ export function normalizeMemo(raw) {
   return {
     id: typeof raw.id === 'string' && raw.id ? raw.id : makeId('m'),
     text: body,
+    note: multiline(raw.note, 4000),
     tags: uniqueTags(raw.tags),
     done,
     doneAt: done ? (typeof raw.doneAt === 'string' ? raw.doneAt : nowIso()) : null,

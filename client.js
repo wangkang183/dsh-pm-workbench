@@ -10,7 +10,7 @@
  * touches a provider key.
  */
 window.__ModuleLoader__.load({
-  id: 'dsh-pm-workbench',
+  id: '@local/pm-workbench',
   factory(require) {
     'use strict';
 
@@ -18,7 +18,7 @@ window.__ModuleLoader__.load({
     const h = React.createElement;
     const { useState, useEffect, useMemo, useRef, useCallback } = React;
 
-    const TAB_ID = 'dsh-pm-workbench';
+    const TAB_ID = '@local/pm-workbench';
     const KIND = 'pm-workbench';
     const STORE_KEY = 'dsh.pm-workbench.v2';
     const LEGACY_KEY = 'dsh.pm-workbench.v1';
@@ -158,6 +158,7 @@ window.__ModuleLoader__.load({
       pin: '置顶',
       unpin: '取消置顶',
       edit: '编辑',
+      note_ph: '备注（可选）',
       cancel: '取消',
       delete: '删除',
       due_label: '截止日期',
@@ -312,6 +313,7 @@ window.__ModuleLoader__.load({
       pin: 'Pin',
       unpin: 'Unpin',
       edit: 'Edit',
+      note_ph: 'Note (optional)',
       cancel: 'Cancel',
       delete: 'Delete',
       due_label: 'Due date',
@@ -483,6 +485,11 @@ window.__ModuleLoader__.load({
 .pmw-check.is-on{background:var(--pmw-fill);border-color:var(--pmw-fill);animation:pmw-pop .22s ease}
 .pmw-check:active{transform:scale(.9)}
 .pmw-memo-text{font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;cursor:text;min-height:21px}
+.pmw-note{display:flex;align-items:flex-start;gap:5px;margin-top:7px;padding:6px 8px;border-radius:9px;
+  background:var(--pmw-surface-2);color:var(--pmw-muted);font-size:11px;line-height:1.55;
+  white-space:pre-wrap;word-break:break-word;max-height:120px;overflow:auto}
+.pmw-note svg{flex:0 0 auto;margin-top:2px}
+.pmw-note-text{min-width:0}
 .pmw-memo.is-done .pmw-memo-text{text-decoration:line-through;text-decoration-thickness:1.5px;color:var(--pmw-muted)}
 .pmw-memo-meta{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:7px}
 .pmw-meta-text{font-size:10px;color:var(--pmw-muted);line-height:1.4}
@@ -512,6 +519,7 @@ window.__ModuleLoader__.load({
 .pmw-editbox textarea{width:100%;min-height:58px;max-height:180px;resize:vertical;border:1px solid var(--pmw-line);
   border-radius:12px;background:var(--pmw-surface);color:var(--pmw-ink);font-size:12.5px;line-height:1.6;padding:8px 10px;outline:none}
 .pmw-editbox textarea:focus{border-color:var(--pmw-primary);box-shadow:0 0 0 3px var(--pmw-primary-soft)}
+.pmw-editbox textarea.pmw-note-input{min-height:44px;margin-top:6px;font-size:12px}
 .pmw-editrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px}
 .pmw-input{height:32px;border:1px solid var(--pmw-line);border-radius:10px;background:var(--pmw-surface);color:var(--pmw-ink);
   font-size:12px;padding:0 9px;outline:none;min-width:0}
@@ -532,11 +540,12 @@ window.__ModuleLoader__.load({
 .pmw-empty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:22px 14px 14px}
 .pmw-empty h4{margin:10px 0 3px;font-size:13px;font-weight:700;color:var(--pmw-ink)}
 .pmw-empty p{margin:0;font-size:11.5px;line-height:1.65;color:var(--pmw-muted);max-width:240px}
-.pmw-dock{flex:0 0 auto;padding:9px 12px 12px;background:var(--pmw-bg);border-top:1px solid var(--pmw-line);
+.pmw-dock{position:relative;flex:0 0 auto;padding:9px 12px 12px;background:var(--pmw-bg);border-top:1px solid var(--pmw-line);
   box-shadow:0 -8px 22px rgba(28,20,50,.045)}
 .pmw-toast{position:absolute;left:14px;right:14px;bottom:18px;z-index:60;display:flex;align-items:center;gap:10px;
   padding:10px 12px;border-radius:14px;background:#2b2345;color:#fff;font-size:12px;
   box-shadow:0 12px 32px rgba(20,14,36,.4);animation:pmw-rise .2s ease}
+.pmw-dock > .pmw-toast{bottom:calc(100% + 8px)}
 .pmw-toast-text{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pmw-toast button{border:0;background:transparent;color:#d8c9ff;font-size:12px;font-weight:700;cursor:pointer;padding:2px 4px}
 .pmw-toast button:hover{color:#fff}
@@ -1137,6 +1146,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       return {
         id: typeof raw.id === 'string' && raw.id ? raw.id : uid('m'),
         text,
+        note: cleanMultiline(raw.note, 4000),
         tags: uniqueTags(raw.tags),
         done,
         doneAt: done ? (typeof raw.doneAt === 'string' ? raw.doneAt : new Date().toISOString()) : null,
@@ -2071,6 +2081,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       const now = props.now;
       const [menuOpen, setMenuOpen] = useState(false);
       const [editText, setEditText] = useState(memo.text);
+      const [editNote, setEditNote] = useState(memo.note || '');
       const [editTags, setEditTags] = useState(memo.tags);
       const [editDate, setEditDate] = useState(memo.dueDate || '');
       const [editTime, setEditTime] = useState(memo.dueTime || '');
@@ -2080,6 +2091,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       useEffect(() => {
         if (!props.editing) return;
         setEditText(memo.text);
+        setEditNote(memo.note || '');
         setEditTags(memo.tags);
         setEditDate(memo.dueDate || '');
         setEditTime(memo.dueTime || '');
@@ -2127,6 +2139,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
         if (!text) return;
         props.onSave(memo.id, {
           text,
+          note: cleanMultiline(editNote, 4000),
           tags: uniqueTags(editTags),
           dueDate: editDate || null,
           dueTime: editDate ? (editTime || null) : null,
@@ -2188,6 +2201,18 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
                 if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) { event.preventDefault(); save(); }
               },
             }),
+            h('textarea', {
+              className: 'pmw-note-input',
+              value: editNote,
+              rows: 2,
+              placeholder: t('note_ph'),
+              'aria-label': t('note_ph'),
+              onChange: (event) => setEditNote(event.target.value),
+              onKeyDown: (event) => {
+                if (event.key === 'Escape') { event.preventDefault(); props.onCancelEdit(); }
+                if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) { event.preventDefault(); save(); }
+              },
+            }),
             h('div', { className: 'pmw-editrow' },
               h('input', {
                 className: 'pmw-input',
@@ -2236,6 +2261,13 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
             onDoubleClick: () => { props.onDrawerClose(); props.onEdit(memo.id); },
             title: t('edit'),
           }, memo.text),
+
+        !props.editing && memo.note
+          ? h('div', { className: 'pmw-note' },
+            h(Icon, { name: 'note', size: 11 }),
+            h('span', { className: 'pmw-note-text' }, memo.note),
+          )
+          : null,
 
         !props.editing && (metaTags.length || memo.dueDate || memo.pinned)
           ? h('div', { className: 'pmw-memo-meta' },
@@ -3162,7 +3194,8 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
         if (!action && !force && toast && toast.action) return;
         if (toastTimer.current) clearTimeout(toastTimer.current);
         setToast({ id: Date.now(), text, action });
-        toastTimer.current = setTimeout(() => setToast(null), 5000);
+        const ttl = force ? 4000 : action ? 2600 : 1600;
+        toastTimer.current = setTimeout(() => setToast(null), ttl);
       }
 
       function switchTab(next) {
@@ -3458,6 +3491,15 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       const ringTotal = ringStats.done.length + ringStats.open.length;
       const ringRate = ringTotal ? ringStats.done.length / ringTotal : 0;
 
+      const toastNode = toast
+        ? h('div', { className: 'pmw-toast', role: 'status' },
+          h('span', { className: 'pmw-toast-text' }, toast.text),
+          toast.action
+            ? h('button', { type: 'button', onClick: toast.action.run }, toast.action.label)
+            : null,
+        )
+        : null;
+
       return h('div', { className: 'pmw-root' },
         h('style', null, CSS),
 
@@ -3552,6 +3594,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
 
         tab === 'memos'
           ? h('div', { className: 'pmw-dock' },
+            toastNode,
             h(Composer, {
               now,
               draft,
@@ -3564,18 +3607,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
             }))
           : null,
 
-        toast
-          ? h('div', {
-            className: 'pmw-toast',
-            role: 'status',
-            style: { bottom: tab === 'memos' ? 190 : 18 },
-          },
-          h('span', { className: 'pmw-toast-text' }, toast.text),
-          toast.action
-            ? h('button', { type: 'button', onClick: toast.action.run }, toast.action.label)
-            : null,
-          )
-          : null,
+        tab !== 'memos' ? toastNode : null,
 
         h(AISheet, {
           open: aiOpen,
