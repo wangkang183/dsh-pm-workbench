@@ -136,7 +136,15 @@ pm-workbench/
 
 ## 安装与更新
 
-在 DSH 的「插件 → 添加插件」里选择本目录，或：
+npm 包名：`dsh-common-workbench`。
+
+发布后可直接安装：
+
+```sh
+dsh plugin --profile desktop add dsh-common-workbench
+```
+
+本地开发时，也可以在 DSH 的「插件 → 添加插件」里选择本目录：
 
 ```text
 plugin_manager { action: "install_bundle", target: "<绝对路径>/pm-workbench" }
@@ -147,14 +155,6 @@ plugin_manager { action: "install_bundle", target: "<绝对路径>/pm-workbench"
 已安装时，改动文件后**刷新页面**即可加载新 client；Host 路由或工具改动需要重新加载插件（禁用再启用）或重启 DSH。
 
 收件箱依赖 `imapflow` 和 `mailparser`，已写进 `package.json`；本地开发如果没有在插件目录安装依赖，会自动尝试复用 DSH profile 里已安装的同名包。
-
-首次安装：
-
-```text
-plugin_manager { action: "install_bundle", target: "<绝对路径>/pm-workbench" }
-```
-
-或 `dsh plugin --profile desktop add <绝对路径>/pm-workbench`。
 
 回滚：删掉 `cordis.patch.yml` 里的 `pm-workbench` insert 行和 `dsh.profile.bundles` 条目；localStorage 数据不会丢。
 

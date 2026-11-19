@@ -1,20 +1,31 @@
 {
-  "name": "@local/pm-workbench",
-  "version": "2.5.1",
-  "private": true,
+  "name": "dsh-common-workbench",
+  "version": "2.5.2",
   "type": "module",
-  "dependencies": {
-    "imapflow": "^2.12.1",
-    "mailparser": "^3.14.4"
-  },
-  "description": "PM workbench in the right sidebar: memos, projects with Gantt, a read-only QQ Mail inbox, calendar, AI weekly digest, and host tools for WeChat/IM access.",
+  "license": "MIT",
+  "author": "kieran.wang (https://github.com/wangkang183)",
+  "description": "A right-sidebar workbench for DeepSeek Harness: memos, projects with Gantt, a read-only QQ Mail inbox, calendar, AI item parsing, weekly digest, and host tools for conversational and WeChat todo management.",
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "todo",
+    "workbench",
+    "memo",
+    "project",
+    "inbox",
+    "qq-mail"
+  ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/wangkang183/dsh-pm-workbench.git"
+    "url": "git+https://github.com/wangkang183/dsh-pm-workbench.git"
   },
   "homepage": "https://github.com/wangkang183/dsh-pm-workbench#readme",
   "bugs": {
     "url": "https://github.com/wangkang183/dsh-pm-workbench/issues"
+  },
+  "dependencies": {
+    "imapflow": "^2.12.1",
+    "mailparser": "^3.14.4"
   },
   "exports": {
     ".": "./index.js",
@@ -30,7 +41,8 @@
     "inbox.js",
     "cordis.patch.yml",
     "locale/*.json",
-    "icon.svg"
+    "icon.svg",
+    "README.md"
   ],
   "dsh": {
     "bundle": { "patch": "./cordis.patch.yml" },

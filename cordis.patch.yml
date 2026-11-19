@@ -1,3 +1,3 @@
 - insert:
     - id: pm-workbench
-      name: 'dsh-pm-workbench'
+      name: 'dsh-common-workbench'
