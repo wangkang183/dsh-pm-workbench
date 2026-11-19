@@ -32,6 +32,7 @@ window.__ModuleLoader__.load({
 
     const ZH = {
       title: '工作台',
+      guide_desc: '备忘、项目、收件箱与周报',
       tab_memos: '备忘',
       tab_projects: '项目',
       tab_inbox: '收件箱',
@@ -281,6 +282,7 @@ window.__ModuleLoader__.load({
 
     const EN = {
       title: 'Workbench',
+      guide_desc: 'Memos, projects, inbox and weekly digest',
       tab_memos: 'Memos',
       tab_projects: 'Projects',
       tab_inbox: 'Inbox',
@@ -5393,6 +5395,10 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       }, h(Icon, { name: 'note', size: 13 }), t('title'));
     }
 
+    function WorkbenchGuideIcon(props) {
+      return h(Icon, { name: 'note', size: props && Number.isFinite(props.size) ? props.size : 22 });
+    }
+
     /* ------------------------------------------------------------- registration */
 
     let openWorkbench = () => {};
@@ -5471,6 +5477,13 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           id: TAB_ID,
           kind: KIND,
           title: () => t('title'),
+          guide: [{
+            id: 'open',
+            order: 30,
+            title: () => t('title'),
+            description: () => t('guide_desc'),
+            icon: WorkbenchGuideIcon,
+          }],
           keepMounted: true,
         })));
 
@@ -5479,29 +5492,39 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           key: TAB_ID,
         }, Workbench)));
 
-        attempt('launcher', () => ctx.slots.inject('conversation.session.header.corner', () => ctx.slots.register({
-          name: 'conversation.session.header.corner',
+        // `conversation.session.header.corner` is the shell's single seat for the
+        // right column's own expand button, so the launcher lives in the composer
+        // tool row instead and the column keeps exactly one way back in.
+        attempt('launcher', () => ctx.slots.inject('conversation.input.left', () => ctx.slots.register({
+          name: 'conversation.input.left',
           id: 'pm-workbench-launcher',
-          order: 60,
+          order: 40,
         }, Launcher)));
 
-        // Open once on boot; never fight a user who closed the tab afterwards.
+        // Force the Workbench tab into the right column once per page load, and
+        // keep asking until the navigation controller accepts it: the surface can
+        // still be minting its per-Session store when this plugin applies.
         attempt('auto-open', () => {
           let tries = 0;
           let opened = false;
-          const timer = setInterval(() => {
-            if (opened) { clearInterval(timer); return; }
+          let timer;
+          const stop = () => { if (timer) { clearInterval(timer); timer = undefined; } };
+          const tick = () => {
+            if (opened) { stop(); return; }
             tries += 1;
             try {
               ctx.sidebarRight.openTab(KIND);
               opened = true;
               noteState({ opened: true, tries });
-              clearInterval(timer);
+              stop();
             } catch (err) {
-              if (tries >= 3) { noteState({ opened: false, tries }); clearInterval(timer); }
+              noteState({ opened: false, tries, openError: String((err && err.message) || err) });
+              if (tries >= 40) stop();
             }
-          }, 2500);
-          ctx.effect(() => () => clearInterval(timer));
+          };
+          timer = setInterval(tick, 700);
+          ctx.effect(() => () => stop());
+          tick();
         });
       },
     };
