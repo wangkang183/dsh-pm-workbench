@@ -31,7 +31,7 @@ const MAX_PARSE_CHARS = 6000;
 const MAX_PROMPT_ITEMS = 120;
 const MAX_PROMPT_CHARS = 14_000;
 
-export const inject = ['webServer'];
+export const inject = ['webServer', 'connection'];
 
 export function apply(ctx) {
   const server = getService(ctx, 'webServer');
@@ -103,9 +103,34 @@ function getService(ctx, name) {
   }
 }
 
+/**
+ * Ask DSH's own Host/Origin + login gate before doing anything with a request.
+ * The route is registered on the bare webServer, so without this an arbitrary
+ * page open in the user's browser could call the workbench API.
+ */
+function refuseUnadmitted(ctx, req, res) {
+  const connection = getService(ctx, 'connection');
+  const gate = connection && connection.requestRejection;
+  if (typeof gate !== 'function') return false;
+  let status;
+  try {
+    status = gate.call(connection, req);
+  } catch (err) {
+    // A throwing gate has admitted nothing; fail closed.
+    status = 403;
+  }
+  if (status === undefined) return false;
+  const message = status === 401
+    ? '需要先登录 DSH：请重新打开 dsh web 启动时打印的网址。 / DSH login required: reopen the URL dsh web printed at startup.'
+    : '这个请求来自不受信任的地址，已拒绝。 / This request came from an untrusted origin and was refused.';
+  fail(res, status, message, status === 401 ? 'login-required' : 'untrusted-origin');
+  return true;
+}
+
 /* ------------------------------------------------------------------ routing */
 
 async function handle(ctx, req, res) {
+  if (refuseUnadmitted(ctx, req, res)) return;
   if (req.method === 'OPTIONS') { head(res, 204); return; }
   if (req.method === 'GET') {
     const route = await resolveRoute(ctx).catch((err) => ({ error: String((err && err.message) || err) }));
@@ -147,6 +172,7 @@ async function handle(ctx, req, res) {
 }
 
 async function handleData(ctx, req, res) {
+  if (refuseUnadmitted(ctx, req, res)) return;
   if (req.method === 'OPTIONS') { head(res, 204); return; }
   if (req.method === 'GET') {
     const state = loadState();
@@ -181,6 +207,7 @@ async function handleData(ctx, req, res) {
 }
 
 async function handleInbox(ctx, req, res) {
+  if (refuseUnadmitted(ctx, req, res)) return;
   if (req.method === 'OPTIONS') { head(res, 204); return; }
   if (req.method === 'GET') {
     try {

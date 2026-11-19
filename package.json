@@ -1,22 +1,12 @@
 {
-  "name": "dsh-pm-workbench",
-  "version": "2.5.0",
+  "name": "@local/pm-workbench",
+  "version": "2.5.1",
+  "private": true,
   "type": "module",
-  "license": "MIT",
   "dependencies": {
     "imapflow": "^2.12.1",
     "mailparser": "^3.14.4"
   },
-  "author": "kieran.wang (https://github.com/wangkang183)",
-  "keywords": [
-    "dsh-plugin",
-    "deepseek-harness",
-    "todo",
-    "workbench",
-    "memo",
-    "inbox",
-    "qq-mail"
-  ],
   "description": "PM workbench in the right sidebar: memos, projects with Gantt, a read-only QQ Mail inbox, calendar, AI weekly digest, and host tools for WeChat/IM access.",
   "repository": {
     "type": "git",

@@ -79,6 +79,7 @@ Host 侧：
 - **Host 文件是共享数据源**：`$DSH_HOME/storages/pm-workbench/workbench.json`。浏览器 localStorage 只作为缓存；打开工作台时会把旧缓存与 Host 合并，之后本机编辑会同步到 Host，Host 工具/微信改动会轮询回 UI。
 - 存储键 `dsh.pm-workbench.v2` 仍保留；首次打开会读取旧键 `dsh.pm-workbench.v1`，把旧 `todos` 转成备忘（标题、标签、截止日、完成态），`keywords`/`intel` 直接丢弃。
 - 周报按周一日期缓存在 `reports`，重新生成会覆盖。
+- **HTTP 路由沿用 DSH 自身门禁**：`/pm-workbench/ai`、`/data`、`/inbox` 在入口调用 `connection.requestRejection`，和 DSH API 共用 Host/Origin 与登录检查；未登录或来源不受信任的请求返回 401/403。
 - **升级后请打开一次工作台**：旧 localStorage 数据需要这一下才会迁移到 Host；之后微信/IM 才能读到同一份待办。
 
 ## 对话与微信/IM

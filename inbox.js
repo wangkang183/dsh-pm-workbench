@@ -110,7 +110,7 @@ async function withMailbox(email, authCode, fn) {
     port: IMAP_PORT,
     secure: true,
     auth: { user: email, pass: authCode },
-    clientInfo: { name: 'DSH Workbench', version: '2.5.0', vendor: 'DeepSeek Harness' },
+    clientInfo: { name: 'DSH Workbench', version: '2.5.1', vendor: 'DeepSeek Harness' },
     logger: false,
     connectionTimeout: 15_000,
     greetingTimeout: 15_000,
