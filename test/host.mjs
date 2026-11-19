@@ -8,19 +8,23 @@ const home = mkdtempSync(join(tmpdir(), 'pm-workbench-host-'));
 process.env.DSH_HOME = home;
 
 const { apply, inject } = await import('../index.js');
-assert.deepEqual(inject, ['webServer']);
+assert.deepEqual(inject, ['webServer', 'connection']);
 const { advanceDailyMemos, normalizeMemo } = await import('../store.js');
 const { mailToMemoDraft } = await import('../inbox.js');
 const { getInboxStatus, saveInboxConfig } = await import('../inbox.js');
 
 const handlers = {};
 const streamCalls = [];
+let gateStatus;
 
 const ctx = {
   effect: (fn) => fn(),
   get(name) {
     if (name === 'webServer') {
       return { register(route) { handlers[route.path] = route.handler; return () => {}; } };
+    }
+    if (name === 'connection') {
+      return { requestRejection: () => gateStatus };
     }
     if (name === 'agentDefaultModel') {
       return { currentSelection: () => ({ provider: 'fake-provider', model: 'fake-model' }) };
@@ -235,6 +239,12 @@ assert.equal(dailyNext.memos.length, 2);
 assert.equal(dailyNext.memos[0].id !== 'd_done', true);
 assert.equal(dailyNext.memos[0].dueDate, '2026-11-17');
 assert.equal(dailyNext.memos.find((memo) => memo.id === 'd_done').repeat, null);
+
+gateStatus = 403;
+const refused = await call('/pm-workbench/ai', 'GET');
+assert.equal(refused.status, 403);
+assert.equal(refused.json.code, 'untrusted-origin');
+gateStatus = undefined;
 
 console.log('host tests: ok');
 rmSync(home, { recursive: true, force: true });
