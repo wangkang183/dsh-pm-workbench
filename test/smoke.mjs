@@ -20,6 +20,7 @@ const React = {
 };
 
 const calls = [];
+let registeredTab = null;
 const mod = captured.factory(() => React);
 assert.equal(typeof mod.apply, 'function');
 assert.ok(Array.isArray(mod.inject));
@@ -31,7 +32,7 @@ const ctx = {
     register: (opts) => { calls.push(['register', opts.name, opts.key || opts.id || '']); return () => {}; },
   },
   sidebarRight: { openTab: (k) => calls.push(['openTab', k]), isExpanded: () => true },
-  sidebarRightTabs: { register: (def) => { calls.push(['tabs.register', def.id, def.kind]); return () => {}; } },
+  sidebarRightTabs: { register: (def) => { registeredTab = def; calls.push(['tabs.register', def.id, def.kind]); return () => {}; } },
 };
 
 mod.apply(ctx);
@@ -39,9 +40,11 @@ mod.apply(ctx);
 assert.ok(mod.inject.includes('sidebarRightTabs'));
 assert.ok(mod.inject.includes('slots'));
 assert.ok(calls.some((call) => call[0] === 'tabs.register' && call[1] === '@local/pm-workbench' && call[2] === 'pm-workbench'), 'tab type registered');
+assert.ok(registeredTab && Array.isArray(registeredTab.guide) && registeredTab.guide.some((entry) => entry.id === 'open'), 'start-page guide entry registered');
 assert.ok(calls.some((call) => call[0] === 'inject' && call[1] === 'sidebar.right.pane.tab'), 'pane slot injected');
 assert.ok(calls.some((call) => call[0] === 'register' && call[1] === 'sidebar.right.pane.tab' && call[2] === '@local/pm-workbench'), 'pane body registered');
-assert.ok(calls.some((call) => call[0] === 'register' && call[1] === 'conversation.session.header.corner'), 'launcher registered');
+assert.ok(calls.some((call) => call[0] === 'register' && call[1] === 'conversation.input.left' && call[2] === 'pm-workbench-launcher'), 'launcher registered');
+assert.ok(registeredTab && Array.isArray(registeredTab.guide) && registeredTab.guide.some((entry) => entry.id === 'open'), 'start-page guide entry registered');
 
-console.log('smoke: ok — tab type, pane body, launcher registered');
+console.log('smoke: ok — tab type, pane body, launcher, start-page guide entry registered');
 process.exit(0);
