@@ -60,6 +60,19 @@ export function isTimeText(value) {
   return Number(match[1]) < 24 && Number(match[2]) < 60;
 }
 
+export function normalizeOrigin(raw) {
+  if (!raw || typeof raw !== 'object' || raw.kind !== 'email') return null;
+  return {
+    kind: 'email',
+    channel: text(raw.channel, 40) || 'qq-mail',
+    label: text(raw.label, 80) || 'QQ 邮箱',
+    from: text(raw.from, 300),
+    subject: text(raw.subject, 300),
+    date: text(raw.date, 40),
+    messageId: text(raw.messageId, 100),
+  };
+}
+
 export function normalizeMemo(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const body = multiline(raw.text, 4000);
@@ -76,6 +89,7 @@ export function normalizeMemo(raw) {
     repeat,
     seriesId: repeat ? (typeof raw.seriesId === 'string' && raw.seriesId ? raw.seriesId : makeId('r')) : null,
     projectId: typeof raw.projectId === 'string' && raw.projectId ? raw.projectId : null,
+    origin: normalizeOrigin(raw.origin),
     done,
     doneAt: done ? (typeof raw.doneAt === 'string' ? raw.doneAt : nowIso()) : null,
     dueDate,

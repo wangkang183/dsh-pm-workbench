@@ -89,6 +89,15 @@ window.__ModuleLoader__.load({
       inbox_pick_channel: '接入信息渠道',
       inbox_pick_channel_desc: '目前支持 QQ 邮箱；更多渠道后续接入。',
       inbox_source: '来源',
+      mail_todo_source: '邮件来源',
+      mail_todo_hint: '可以修改待办内容、备注、标签和截止时间；来源会随待办保存。',
+      mail_todo_content: '待办内容',
+      mail_todo_note: '备注',
+      mail_todo_tags: '标签',
+      mail_todo_tags_ph: '用逗号分隔，例如：邮件, 客户',
+      mail_todo_due: '截止日期',
+      mail_todo_time: '时间',
+      from_mail: '来自邮件',
       project_new: '新增项目',
       project_new_task: '新增任务',
       project_name: '项目名称',
@@ -339,6 +348,15 @@ window.__ModuleLoader__.load({
       inbox_pick_channel: 'Add an information channel',
       inbox_pick_channel_desc: 'QQ Mail is available now; more channels are coming.',
       inbox_source: 'Source',
+      mail_todo_source: 'Email source',
+      mail_todo_hint: 'Edit the memo text, note, tags and due date; the source is saved with the memo.',
+      mail_todo_content: 'Memo text',
+      mail_todo_note: 'Note',
+      mail_todo_tags: 'Tags',
+      mail_todo_tags_ph: 'Comma separated, e.g. email, client',
+      mail_todo_due: 'Due date',
+      mail_todo_time: 'Time',
+      from_mail: 'From email',
       project_new: 'New project',
       project_new_task: 'New task',
       project_name: 'Project name',
@@ -844,6 +862,12 @@ window.__ModuleLoader__.load({
 .pmw-mail-body{font-size:12px;line-height:1.7;color:var(--pmw-ink);white-space:pre-wrap;word-break:break-word;max-height:360px;overflow:auto;
   padding:8px 9px;border-radius:10px;background:var(--pmw-surface-2)}
 .pmw-mail-readonly{font-size:9.5px;color:var(--pmw-muted);margin-top:6px}
+.pmw-mail-todo-source{display:flex;align-items:flex-start;gap:7px;padding:8px 9px;border:1px solid var(--pmw-line);
+  border-radius:10px;background:var(--pmw-surface-2);margin-bottom:8px;color:var(--pmw-muted)}
+.pmw-mail-todo-source b{display:block;font-size:10px;color:var(--pmw-ink)}
+.pmw-mail-todo-source span{display:inline-block;margin-top:1px;font-size:9.5px;color:var(--pmw-primary);font-weight:700}
+.pmw-mail-todo-source small{display:block;margin-top:1px;font-size:9px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pmw-memo-origin{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:var(--pmw-teal);font-weight:700}
 .pmw-inbox-hub-head{display:flex;align-items:flex-start;gap:8px;margin-bottom:9px}
 .pmw-inbox-hub-head h3{margin:0;font-size:14px;font-weight:800;color:var(--pmw-ink)}
 .pmw-inbox-hub-head p{margin:3px 0 0;font-size:10px;line-height:1.5;color:var(--pmw-muted)}
@@ -1640,6 +1664,19 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       return out;
     }
 
+    function normalizeOrigin(raw) {
+      if (!raw || typeof raw !== 'object' || raw.kind !== 'email') return null;
+      return {
+        kind: 'email',
+        channel: cleanString(raw.channel, 40) || 'qq-mail',
+        label: cleanString(raw.label, 80) || 'QQ 邮箱',
+        from: cleanString(raw.from, 300),
+        subject: cleanString(raw.subject, 300),
+        date: cleanString(raw.date, 40),
+        messageId: cleanString(raw.messageId, 100),
+      };
+    }
+
     function normalizeMemo(raw) {
       if (!raw || typeof raw !== 'object') return null;
       const text = cleanMultiline(raw.text, 4000);
@@ -1654,6 +1691,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
         repeat,
         seriesId: repeat ? (typeof raw.seriesId === 'string' && raw.seriesId ? raw.seriesId : uid('r')) : null,
         projectId: typeof raw.projectId === 'string' && raw.projectId ? raw.projectId : null,
+        origin: normalizeOrigin(raw.origin),
         done,
         doneAt: done ? (typeof raw.doneAt === 'string' ? raw.doneAt : new Date().toISOString()) : null,
         dueDate: isDateText(raw.dueDate) ? raw.dueDate : null,
@@ -2461,6 +2499,9 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           tags ? `- 标签：${tags}` : '',
           due ? `- 截止：${due}` : '',
           memo.repeat === 'daily' ? '- 重复：每天' : '',
+          memo.origin && memo.origin.kind === 'email'
+            ? `- 来源：邮件${memo.origin.from ? ' · ' + memo.origin.from : ''}${memo.origin.subject ? ' · ' + memo.origin.subject : ''}`
+            : '',
           `- 状态：${memo.done ? '已完成' : '未完成'}`,
           `- ID：${memo.id}`,
           '',
@@ -2472,6 +2513,9 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           tags ? `- Tags: ${tags}` : '',
           due ? `- Due: ${due}` : '',
           memo.repeat === 'daily' ? '- Repeat: daily' : '',
+          memo.origin && memo.origin.kind === 'email'
+            ? `- Source: email${memo.origin.from ? ' · ' + memo.origin.from : ''}${memo.origin.subject ? ' · ' + memo.origin.subject : ''}`
+            : '',
           `- Status: ${memo.done ? 'done' : 'open'}`,
           `- ID: ${memo.id}`,
           '',
@@ -2885,9 +2929,15 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           )
           : null,
 
-        !props.editing && (metaTags.length || memo.dueDate || memo.pinned || memo.repeat === 'daily' || memo.projectId || hasTag(memo, '项目'))
+        !props.editing && (metaTags.length || memo.dueDate || memo.pinned || memo.repeat === 'daily' || memo.projectId || memo.origin || hasTag(memo, '项目'))
           ? h('div', { className: 'pmw-memo-meta' },
             memo.pinned ? h('span', { className: 'pmw-pin', title: t('pin') }, h(Icon, { name: 'pin', size: 11 })) : null,
+            memo.origin && memo.origin.kind === 'email'
+              ? h('span', {
+                className: 'pmw-memo-origin',
+                title: [memo.origin.label, memo.origin.from, memo.origin.subject].filter(Boolean).join(' · '),
+              }, h(Icon, { name: 'inbox', size: 11 }), t('from_mail'))
+              : null,
             memo.projectId
               ? h('button', {
                 type: 'button',
@@ -3480,6 +3530,121 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
         }),
         h('div', { className: 'pmw-channel-note' }, t('inbox_pick_channel_desc')),
       );
+    }
+
+    function MailTodoSheet(props) {
+      const message = props.message;
+      const [text, setText] = useState('');
+      const [note, setNote] = useState('');
+      const [tagsText, setTagsText] = useState('邮件');
+      const [dueDate, setDueDate] = useState('');
+      const [dueTime, setDueTime] = useState('');
+      useEffect(() => {
+        if (!props.open || !message) return;
+        setText(cleanString(message.subject, 300) || '(无主题)');
+        setNote(cleanMultiline(message.text || message.preview || '', 4000));
+        setTagsText('邮件');
+        setDueDate('');
+        setDueTime('');
+      }, [props.open, message && message.id]);
+      if (!props.open || !message) return null;
+      const save = () => {
+        const tags = uniqueTags(tagsText.split(/[,，\s#]+/).map((tag) => cleanTag(tag)).filter(Boolean));
+        if (tags.indexOf('邮件') < 0) tags.unshift('邮件');
+        props.onSave({
+          text,
+          note,
+          tags,
+          dueDate: isDateText(dueDate) ? dueDate : null,
+          dueTime: isDateText(dueDate) && isTimeText(dueTime) ? dueTime : null,
+          origin: {
+            kind: 'email',
+            channel: 'qq-mail',
+            label: t('inbox_channel_qq'),
+            from: message.from || '',
+            subject: message.subject || '',
+            date: message.date || '',
+            messageId: message.id || '',
+          },
+        });
+      };
+      return h('div', {
+        className: 'pmw-backdrop',
+        onMouseDown: (event) => { if (event.target === event.currentTarget) props.onClose(); },
+      },
+      h('div', { className: 'pmw-sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': t('inbox_add_todo') },
+        h('div', { className: 'pmw-sheet-grip' }),
+        h('div', { className: 'pmw-sheet-head' },
+          h('div', { className: 'pmw-spark', style: { width: 26, height: 26, borderRadius: 9 } }, h(Icon, { name: 'inbox', size: 14 })),
+          h('h3', null, t('inbox_add_todo')),
+          h('button', { type: 'button', className: 'pmw-iconbtn', onClick: props.onClose, 'aria-label': t('close') }, h(Icon, { name: 'close', size: 15 })),
+        ),
+        h('div', { className: 'pmw-sheet-body' },
+          h('div', { className: 'pmw-mail-todo-source' },
+            h(Icon, { name: 'inbox', size: 14 }),
+            h('div', { style: { minWidth: 0 } },
+              h('b', null, t('mail_todo_source')),
+              h('span', null, t('inbox_channel_qq')),
+              h('small', null, `${message.from || t('inbox_from')} · ${new Date(message.date).toLocaleString('zh-CN')}`),
+              h('small', null, message.subject || ''),
+            ),
+          ),
+          h('label', { className: 'pmw-sheet-label' }, t('mail_todo_content')),
+          h('input', {
+            className: 'pmw-input',
+            style: { width: '100%', height: 34 },
+            value: text,
+            autoFocus: true,
+            onChange: (event) => setText(event.target.value),
+          }),
+          h('label', { className: 'pmw-sheet-label' }, t('mail_todo_note')),
+          h('textarea', {
+            value: note,
+            placeholder: t('mail_todo_note'),
+            onChange: (event) => setNote(event.target.value),
+          }),
+          h('label', { className: 'pmw-sheet-label' }, t('mail_todo_tags')),
+          h('input', {
+            className: 'pmw-input',
+            style: { width: '100%' },
+            value: tagsText,
+            placeholder: t('mail_todo_tags_ph'),
+            onChange: (event) => setTagsText(event.target.value),
+          }),
+          h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 } },
+            h('div', null,
+              h('label', { className: 'pmw-sheet-label' }, t('mail_todo_due')),
+              h('input', {
+                className: 'pmw-input',
+                type: 'date',
+                style: { width: '100%' },
+                value: dueDate,
+                onChange: (event) => setDueDate(event.target.value),
+              }),
+            ),
+            h('div', null,
+              h('label', { className: 'pmw-sheet-label' }, t('mail_todo_time')),
+              h('input', {
+                className: 'pmw-input',
+                type: 'time',
+                style: { width: '100%' },
+                value: dueTime,
+                onChange: (event) => setDueTime(event.target.value),
+              }),
+            ),
+          ),
+          h('div', { className: 'pmw-mail-readonly' }, t('mail_todo_hint')),
+        ),
+        h('div', { className: 'pmw-sheet-foot' },
+          h('button', { type: 'button', className: 'pmw-btn is-ghost', onClick: props.onClose }, t('cancel')),
+          h('button', {
+            type: 'button',
+            className: 'pmw-btn is-primary',
+            disabled: !cleanString(text, 4000),
+            onClick: save,
+          }, t('inbox_add_todo')),
+        ),
+      ));
     }
 
     function InboxView(props) {
@@ -4550,6 +4715,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       const [taskSheet, setTaskSheet] = useState(null);
       const [selectedProjectId, setSelectedProjectId] = useState(() => (store.projects && store.projects[0] ? store.projects[0].id : null));
       const [inbox, setInbox] = useState({ status: null, messages: [], syncing: false, error: null, loaded: false });
+      const [mailTodo, setMailTodo] = useState(null);
       const [inboxGuideClosed, setInboxGuideClosed] = useState(() => {
         try { return localStorage.getItem('dsh.pm-workbench.inbox.guide') === '1'; } catch (err) { return false; }
       });
@@ -4812,22 +4978,27 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
         }
       }
 
-      function addMailToMemo(message) {
+      function openMailTodo(message) {
         if (!message) return;
-        const from = cleanString(message.from, 300) || '未知发件人';
-        const body = String(message.text || message.preview || '').slice(0, 4000);
-        const date = message.date ? new Date(message.date).toLocaleString('zh-CN') : '';
+        setMailTodo(message);
+      }
+
+      function saveMailTodo(form) {
         const memo = normalizeMemo({
-          text: message.subject || '(无主题)',
-          note: `来自：${from}${date ? `\n时间：${date}` : ''}\n\n${body}`.slice(0, 4000),
-          tags: ['邮件'],
+          text: form.text,
+          note: form.note,
+          tags: form.tags,
+          dueDate: form.dueDate,
+          dueTime: form.dueTime,
+          origin: form.origin,
         });
         if (!memo) return;
         setStore((current) => ({
           ...current,
           memos: [memo].concat(current.memos),
-          tagOptions: normalizeTagList((current.tagOptions || DEFAULT_TAGS).concat(['邮件']), true),
+          tagOptions: normalizeTagList((current.tagOptions || DEFAULT_TAGS).concat(memo.tags), true),
         }));
+        setMailTodo(null);
         showToast(t('inbox_added'), { label: t('inbox_open_memo'), run: () => switchTab('memos') });
       }
 
@@ -5288,7 +5459,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
                     onConnect: connectInbox,
                     onSync: syncInbox,
                     onDisconnect: disconnectInbox,
-                    onAddMemo: addMailToMemo,
+                    onAddMemo: openMailTodo,
                   })
                   : h(WeeklyView, {
                 now,
@@ -5370,6 +5541,13 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           onSave: saveProjectTask,
         }),
 
+        h(MailTodoSheet, {
+          open: !!mailTodo,
+          message: mailTodo,
+          onClose: () => setMailTodo(null),
+          onSave: saveMailTodo,
+        }),
+
         h('input', {
           ref: fileRef,
           type: 'file',
@@ -5445,6 +5623,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           sanitizeReport,
           sanitizeParseResult,
           normalizeMemo,
+          normalizeOrigin,
           normalizeEvent,
           normalizeProject,
           normalizeProjectTask,
@@ -5459,7 +5638,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           endOfWeek,
           parseYmd,
           dueSummary,
-          components: { Workbench, Composer, MemoItem, MemosView, CalendarView, WeeklyView, AISheet, ProjectsView, ProjectSheet, TaskSheet, InboxView, InboxSetup },
+          components: { Workbench, Composer, MemoItem, MemosView, CalendarView, WeeklyView, AISheet, ProjectsView, ProjectSheet, TaskSheet, InboxView, InboxSetup, MailTodoSheet },
         });
       } catch (err) {
         /* the test seam must never break the plugin */

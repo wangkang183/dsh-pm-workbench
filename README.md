@@ -79,7 +79,6 @@ Host 侧：
 - **Host 文件是共享数据源**：`$DSH_HOME/storages/pm-workbench/workbench.json`。浏览器 localStorage 只作为缓存；打开工作台时会把旧缓存与 Host 合并，之后本机编辑会同步到 Host，Host 工具/微信改动会轮询回 UI。
 - 存储键 `dsh.pm-workbench.v2` 仍保留；首次打开会读取旧键 `dsh.pm-workbench.v1`，把旧 `todos` 转成备忘（标题、标签、截止日、完成态），`keywords`/`intel` 直接丢弃。
 - 周报按周一日期缓存在 `reports`，重新生成会覆盖。
-- **起始页快捷入口**：右侧栏「开始」页的工具卡片里新增「工作台」卡片；点击直接打开右侧工作台。
 - **HTTP 路由沿用 DSH 自身门禁**：`/pm-workbench/ai`、`/data`、`/inbox` 在入口调用 `connection.requestRejection`，和 DSH API 共用 Host/Origin 与登录检查；未登录或来源不受信任的请求返回 401/403。
 - **升级后请打开一次工作台**：旧 localStorage 数据需要这一下才会迁移到 Host；之后微信/IM 才能读到同一份待办。
 
@@ -137,15 +136,7 @@ pm-workbench/
 
 ## 安装与更新
 
-npm 包名：`dsh-common-workbench`。
-
-发布后可直接安装：
-
-```sh
-dsh plugin --profile desktop add dsh-common-workbench
-```
-
-本地开发时，也可以在 DSH 的「插件 → 添加插件」里选择本目录：
+在 DSH 的「插件 → 添加插件」里选择本目录，或：
 
 ```text
 plugin_manager { action: "install_bundle", target: "<绝对路径>/pm-workbench" }
@@ -156,6 +147,14 @@ plugin_manager { action: "install_bundle", target: "<绝对路径>/pm-workbench"
 已安装时，改动文件后**刷新页面**即可加载新 client；Host 路由或工具改动需要重新加载插件（禁用再启用）或重启 DSH。
 
 收件箱依赖 `imapflow` 和 `mailparser`，已写进 `package.json`；本地开发如果没有在插件目录安装依赖，会自动尝试复用 DSH profile 里已安装的同名包。
+
+首次安装：
+
+```text
+plugin_manager { action: "install_bundle", target: "<绝对路径>/pm-workbench" }
+```
+
+或 `dsh plugin --profile desktop add <绝对路径>/pm-workbench`。
 
 回滚：删掉 `cordis.patch.yml` 里的 `pm-workbench` insert 行和 `dsh.profile.bundles` 条目；localStorage 数据不会丢。
 

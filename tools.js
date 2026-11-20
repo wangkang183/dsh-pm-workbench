@@ -55,6 +55,9 @@ function memoLine(memo) {
   if (memo.tags && memo.tags.length) bits.push(`标签=${memo.tags.join(',')}`);
   if (memo.note) bits.push(`备注=${oneLine(memo.note, 120)}`);
   if (memo.repeat === 'daily') bits.push('每天');
+  if (memo.origin && memo.origin.kind === 'email') {
+    bits.push(`来源=邮件${memo.origin.from ? ':' + oneLine(memo.origin.from, 80) : ''}`);
+  }
   const due = dueText(memo);
   if (due) bits.push(`截止=${due}`);
   if (memo.pinned) bits.push('置顶');
