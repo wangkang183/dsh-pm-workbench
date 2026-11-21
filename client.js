@@ -10,7 +10,7 @@
  * touches a provider key.
  */
 window.__ModuleLoader__.load({
-  id: '@local/pm-workbench',
+  id: 'dsh-common-workbench',
   factory(require) {
     'use strict';
 
