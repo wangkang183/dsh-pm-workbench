@@ -10,7 +10,7 @@
  * touches a provider key.
  */
 window.__ModuleLoader__.load({
-  id: 'dsh-common-workbench',
+  id: '@local/pm-workbench',
   factory(require) {
     'use strict';
 
@@ -27,16 +27,19 @@ window.__ModuleLoader__.load({
     const DAY = 86400000;
     const BULK_MIN_CHARS = 50;
     const DEFAULT_TAGS = ['重要', '不重要', '紧急', '想法', '会议', '客户', '项目'];
+    let clientCtx = null;
 
     /* ------------------------------------------------------------------ i18n */
 
     const ZH = {
       title: '工作台',
-      guide_desc: '备忘、项目、收件箱与周报',
+      guide_desc: '备忘、项目、消息订阅与周报',
       tab_memos: '备忘',
       tab_projects: '项目',
-      tab_inbox: '收件箱',
-      inbox_title: '收件箱',
+      tab_inbox: '消息',
+      inbox_title: '消息订阅',
+      inbox_tab_mail: '邮件',
+      inbox_tab_feeds: '订阅',
       inbox_setup_title: '连接 QQ 邮箱',
       inbox_setup_desc: '工作台只读收信，不会修改邮箱。启用 QQ 邮箱的 IMAP 服务后，用授权码连接。',
       inbox_email: 'QQ 邮箱地址',
@@ -57,7 +60,7 @@ window.__ModuleLoader__.load({
       inbox_disconnect: '断开邮箱',
       inbox_disconnect_confirm: '断开 QQ 邮箱配置？',
       inbox_back: '返回列表',
-      inbox_guide: '接入信息渠道，邮件一键变待办',
+      inbox_guide: '接入邮件和关键词订阅，消息一键变待办',
       inbox_guide_action: '去配置',
       inbox_not_configured: '还没有连接邮箱',
       inbox_error: '连接失败：{message}',
@@ -98,6 +101,37 @@ window.__ModuleLoader__.load({
       mail_todo_due: '截止日期',
       mail_todo_time: '时间',
       from_mail: '来自邮件',
+      from_feed: '来自订阅',
+      inbox_channel_feeds: '信息订阅',
+      feeds_title: '信息订阅',
+      feeds_subscriptions: '我的订阅',
+      feeds_add_ph: '输入关键词，例如：AI 产品经理',
+      feeds_add_url_ph: '输入网站栏目页或文章页，例如：https://example.com/news',
+      feeds_add_wechat_ph: '输入公众号名称，例如：机器之心',
+      feeds_type_keyword: '关键词',
+      feeds_type_url: '网址',
+      feeds_type_wechat: '公众号',
+      feeds_url_hint: '识别页面里的文章链接；第一次只建立基线，之后有新文章才产生消息。单篇文章则监控正文变化。',
+      feeds_wechat_hint: '通过搜索索引发现公众号文章，可能不完整或有延迟；不是微信官方接口。',
+      feeds_add: '添加订阅',
+      feeds_empty: '还没有订阅，先加一个关键词或网址',
+      feeds_empty_title: '还没有订阅',
+      feeds_empty_desc: '添加关键词或网址，每小时自动更新；新消息会出现在这里。',
+      feeds_latest: '最新消息',
+      feeds_summary: '{n} 个订阅 · 每小时更新',
+      feeds_manage: '管理',
+      feeds_collapse: '收起',
+      feeds_failed: '{n} 个订阅更新失败',
+      feeds_no_items: '还没有搜到信息',
+      feeds_run: '立即更新',
+      feeds_running: '更新中…',
+      feeds_refresh: '刷新',
+      feeds_hourly: '每小时自动更新',
+      feeds_delete_confirm: '删除这个订阅？',
+      feeds_added: '已加入待办',
+      feeds_last: '上次 {time}',
+      feeds_error: '更新失败：{message}',
+      feeds_keyword: '关键词',
       project_new: '新增项目',
       project_new_task: '新增任务',
       project_name: '项目名称',
@@ -108,6 +142,60 @@ window.__ModuleLoader__.load({
       project_due: '截止日期',
       project_tasks: '{n} 个任务',
       project_progress: '项目进度 {n}%',
+      project_completed: '已完成',
+      project_expand: '展开',
+      project_collapse: '收起',
+      project_collapsed_hint: '项目已完成，点击展开查看任务',
+      knowledge: '知识库',
+      knowledge_title: '知识库',
+      knowledge_desc: '按文件夹管理项目材料',
+      knowledge_add: '添加文件夹',
+      knowledge_empty: '还没有知识库文件夹',
+      knowledge_empty_desc: '选择一个本地文件夹，把项目材料集中管理',
+      knowledge_files: '{n} 个文件',
+      knowledge_projects: '关联项目',
+      knowledge_link: '关联',
+      knowledge_unlink: '取消关联',
+      knowledge_manage: '管理知识库',
+      knowledge_project_link: '关联知识库',
+      knowledge_current_project: '正在关联：{name}',
+      knowledge_add_failed: '添加文件夹失败：{message}',
+      knowledge_picker_unavailable: '当前环境无法打开文件夹选择器',
+      knowledge_missing: '文件夹不存在或无法访问',
+      knowledge_remove: '移除',
+      knowledge_remove_confirm: '从知识库移除这个文件夹？不会删除本地文件。',
+      knowledge_no_files: '这个文件夹里没有文件',
+      knowledge_too_many: '最多显示 {n} 个文件',
+      knowledge_manual: '生成操作手册',
+      knowledge_manual_hint: '用 computer use 自动截图，生成 Markdown 手册并归档到当前文件夹',
+      knowledge_manual_title: '手册标题',
+      knowledge_manual_title_ph: '例如：项目创建操作手册',
+      knowledge_manual_type: '目标类型',
+      knowledge_manual_software: '软件',
+      knowledge_manual_website: '网站',
+      knowledge_manual_target_software: '软件或窗口名称',
+      knowledge_manual_target_website: '网站地址',
+      knowledge_manual_target_software_ph: '例如：微信 / Photoshop / 钉钉',
+      knowledge_manual_target_website_ph: 'https://example.com/feature',
+      knowledge_manual_feature: '要记录的功能',
+      knowledge_manual_feature_ph: '例如：新建项目并邀请成员',
+      knowledge_manual_auto_hint: 'Agent 会自动定位窗口/页面并截取功能区域，不需要填写坐标。',
+      knowledge_manual_folder: '归档到知识库文件夹',
+      knowledge_manual_no_folder: '还没有知识库文件夹',
+      knowledge_manual_no_folder_desc: '先添加一个文件夹，生成的手册和截图会归档到那里。',
+      knowledge_manual_loading: '正在加载知识库…',
+      manual_dependency_title: '依赖 computer-use 插件',
+      manual_dependency_desc: '需要启用 dsh_computer_use（mcp__wincu__* 工具）；未启用时无法自动截图，任务会停止并说明原因。',
+      knowledge_manual_path: '目标路径',
+      knowledge_manual_path_ph: 'URL、应用或文件路径',
+      knowledge_manual_bounds: '截图边界',
+      knowledge_manual_bounds_ph: 'x,y,宽,高，例如 0,0,1280,800',
+      knowledge_manual_goal: '要说明的操作',
+      knowledge_manual_goal_ph: '例如：从创建项目到添加第一个任务',
+      knowledge_manual_generate: '开始生成',
+      knowledge_manual_created: '已创建操作手册任务，发送后开始截图',
+      knowledge_manual_need: '请填写标题、目标和要记录的功能',
+      knowledge_manual_unavailable: '当前环境无法创建会话',
       project_empty: '这个项目还没有任务',
       project_no_projects: '还没有项目',
       project_first: '先新增一个项目，再在项目里添加任务。',
@@ -291,11 +379,13 @@ window.__ModuleLoader__.load({
 
     const EN = {
       title: 'Workbench',
-      guide_desc: 'Memos, projects, inbox and weekly digest',
+      guide_desc: 'Memos, projects, message subscriptions and weekly digest',
       tab_memos: 'Memos',
       tab_projects: 'Projects',
-      tab_inbox: 'Inbox',
-      inbox_title: 'Inbox',
+      tab_inbox: 'Messages',
+      inbox_title: 'Message subscriptions',
+      inbox_tab_mail: 'Mail',
+      inbox_tab_feeds: 'Feeds',
       inbox_setup_title: 'Connect QQ Mail',
       inbox_setup_desc: 'Read-only inbox. Enable IMAP in QQ Mail and connect with an authorization code; mail can be added to a memo in one click.',
       inbox_email: 'QQ Mail address',
@@ -316,7 +406,7 @@ window.__ModuleLoader__.load({
       inbox_disconnect: 'Disconnect mailbox',
       inbox_disconnect_confirm: 'Disconnect the QQ Mail configuration?',
       inbox_back: 'Back to list',
-      inbox_guide: 'Connect information channels; turn mail into memos',
+      inbox_guide: 'Connect mail and keyword feeds; turn messages into memos',
       inbox_guide_action: 'Set up',
       inbox_not_configured: 'No mailbox connected',
       inbox_error: 'Connection failed: {message}',
@@ -357,6 +447,37 @@ window.__ModuleLoader__.load({
       mail_todo_due: 'Due date',
       mail_todo_time: 'Time',
       from_mail: 'From email',
+      from_feed: 'From feed',
+      inbox_channel_feeds: 'Feeds',
+      feeds_title: 'Feeds',
+      feeds_subscriptions: 'My subscriptions',
+      feeds_add_ph: 'Enter a keyword, e.g. AI product manager',
+      feeds_add_url_ph: 'Enter a section or article URL, e.g. https://example.com/news',
+      feeds_add_wechat_ph: 'Enter an Official Account name, e.g. 机器之心',
+      feeds_type_keyword: 'Keyword',
+      feeds_type_url: 'URL',
+      feeds_type_wechat: 'WeChat',
+      feeds_url_hint: 'Detects article links on the page; the first fetch only sets a baseline, and new articles create messages. A single article is monitored for content changes.',
+      feeds_wechat_hint: 'Best-effort discovery through the search index; results may be incomplete or delayed. This is not an official WeChat API.',
+      feeds_add: 'Add subscription',
+      feeds_empty: 'No subscriptions yet',
+      feeds_empty_title: 'No subscriptions yet',
+      feeds_empty_desc: 'Add a keyword or URL; it updates hourly and new messages appear here.',
+      feeds_latest: 'Latest messages',
+      feeds_summary: '{n} subscriptions · updated hourly',
+      feeds_manage: 'Manage',
+      feeds_collapse: 'Collapse',
+      feeds_failed: '{n} subscriptions failed',
+      feeds_no_items: 'No results yet',
+      feeds_run: 'Update now',
+      feeds_running: 'Updating…',
+      feeds_refresh: 'Refresh',
+      feeds_hourly: 'Updates hourly',
+      feeds_delete_confirm: 'Delete this subscription?',
+      feeds_added: 'Added to memo',
+      feeds_last: 'Last {time}',
+      feeds_error: 'Update failed: {message}',
+      feeds_keyword: 'Keyword',
       project_new: 'New project',
       project_new_task: 'New task',
       project_name: 'Project name',
@@ -367,6 +488,60 @@ window.__ModuleLoader__.load({
       project_due: 'Due date',
       project_tasks: '{n} tasks',
       project_progress: 'Project progress {n}%',
+      project_completed: 'Done',
+      project_expand: 'Expand',
+      project_collapse: 'Collapse',
+      project_collapsed_hint: 'Project is complete. Expand to view tasks.',
+      knowledge: 'Knowledge',
+      knowledge_title: 'Knowledge base',
+      knowledge_desc: 'Manage project materials by folder',
+      knowledge_add: 'Add folder',
+      knowledge_empty: 'No knowledge folders yet',
+      knowledge_empty_desc: 'Choose a local folder to keep project materials together',
+      knowledge_files: '{n} files',
+      knowledge_projects: 'Linked projects',
+      knowledge_link: 'Link',
+      knowledge_unlink: 'Unlink',
+      knowledge_manage: 'Manage knowledge',
+      knowledge_project_link: 'Link knowledge',
+      knowledge_current_project: 'Linking to: {name}',
+      knowledge_add_failed: 'Could not add folder: {message}',
+      knowledge_picker_unavailable: 'Folder picker is unavailable in this environment',
+      knowledge_missing: 'Folder is missing or inaccessible',
+      knowledge_remove: 'Remove',
+      knowledge_remove_confirm: 'Remove this folder from the knowledge base? Local files are not deleted.',
+      knowledge_no_files: 'No files in this folder',
+      knowledge_too_many: 'Showing at most {n} files',
+      knowledge_manual: 'Generate manual',
+      knowledge_manual_hint: 'Take screenshots with computer use, write a Markdown manual, and archive it in this folder',
+      knowledge_manual_title: 'Manual title',
+      knowledge_manual_title_ph: 'e.g. Project setup guide',
+      knowledge_manual_type: 'Target type',
+      knowledge_manual_software: 'Software',
+      knowledge_manual_website: 'Website',
+      knowledge_manual_target_software: 'App or window name',
+      knowledge_manual_target_website: 'Website URL',
+      knowledge_manual_target_software_ph: 'e.g. WeChat / Photoshop / DingTalk',
+      knowledge_manual_target_website_ph: 'https://example.com/feature',
+      knowledge_manual_feature: 'Feature to document',
+      knowledge_manual_feature_ph: 'e.g. Create a project and invite members',
+      knowledge_manual_auto_hint: 'The Agent locates the window/page and captures the feature automatically; no coordinates needed.',
+      knowledge_manual_folder: 'Archive to knowledge folder',
+      knowledge_manual_no_folder: 'No knowledge folders yet',
+      knowledge_manual_no_folder_desc: 'Add a folder first; the generated manual and screenshots will be archived there.',
+      knowledge_manual_loading: 'Loading knowledge base…',
+      manual_dependency_title: 'Requires the computer-use plugin',
+      manual_dependency_desc: 'Enable dsh_computer_use (mcp__wincu__* tools); without it, automatic screenshots are unavailable and the task will stop with an explanation.',
+      knowledge_manual_path: 'Target path',
+      knowledge_manual_path_ph: 'URL, app, or file path',
+      knowledge_manual_bounds: 'Screenshot bounds',
+      knowledge_manual_bounds_ph: 'x,y,width,height, e.g. 0,0,1280,800',
+      knowledge_manual_goal: 'What to explain',
+      knowledge_manual_goal_ph: 'e.g. Create a project and add the first task',
+      knowledge_manual_generate: 'Start generating',
+      knowledge_manual_created: 'Manual task created. Send it to start taking screenshots.',
+      knowledge_manual_need: 'Fill in the title, target and feature to document',
+      knowledge_manual_unavailable: 'Cannot create a session in this environment',
       project_empty: 'No tasks in this project yet',
       project_no_projects: 'No projects yet',
       project_first: 'Create a project, then add tasks inside it.',
@@ -605,7 +780,7 @@ window.__ModuleLoader__.load({
   background:rgba(255,255,255,.10);pointer-events:none}
 .pmw-hero::before{content:"";position:absolute;left:-30px;bottom:-64px;width:120px;height:120px;border-radius:50%;
   background:rgba(3,218,198,.16);pointer-events:none}
-.pmw-hero-inner{position:relative;z-index:1;display:flex;align-items:flex-start;gap:10px}
+.pmw-hero-inner{position:relative;z-index:1;display:flex;align-items:center;gap:10px}
 .pmw-hero-main{flex:1 1 auto;min-width:0}
 .pmw-hero-kicker{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;opacity:.72}
 .pmw-hero-date{font-size:16px;font-weight:700;line-height:1.35;margin-top:3px}
@@ -614,7 +789,13 @@ window.__ModuleLoader__.load({
 .pmw-hero-menu{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:0;background:rgba(255,255,255,.14);
   color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .18s}
 .pmw-hero-menu:hover{background:rgba(255,255,255,.26)}
-.pmw-ring{flex:0 0 auto;position:relative;width:48px;height:48px;margin-top:1px}
+.pmw-hero-actions{flex:0 0 auto;align-self:center;display:flex;align-items:center;gap:2px;padding:3px;border-radius:14px;
+  background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14);box-shadow:0 2px 8px rgba(30,10,60,.12)}
+.pmw-hero-action{width:28px;height:28px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;padding:0;border:0;
+  border-radius:10px;background:transparent;color:#fff;opacity:.88;cursor:pointer;transition:background .15s,opacity .15s}
+.pmw-hero-action:hover{background:rgba(255,255,255,.20);opacity:1}
+.pmw-hero-action[aria-expanded="true"]{background:rgba(255,255,255,.22);opacity:1}
+.pmw-ring{flex:0 0 auto;position:relative;width:48px;height:48px;margin-top:0}
 .pmw-ring svg{display:block;transform:rotate(-90deg)}
 .pmw-ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
   font-size:10px;font-weight:700;line-height:1.1;color:#fff}
@@ -754,9 +935,63 @@ window.__ModuleLoader__.load({
 .pmw-project-switch select{flex:1 1 auto;min-width:0;height:32px;border:1px solid var(--pmw-line);border-radius:10px;
   background:var(--pmw-surface);color:var(--pmw-ink);font-size:12px;font-weight:600;padding:0 8px;outline:none;font-family:inherit}
 .pmw-project-card{padding:10px 10px 8px;border:1px solid var(--pmw-line);border-radius:14px;background:var(--pmw-surface);box-shadow:var(--pmw-shadow-1)}
-.pmw-project-title{display:flex;align-items:flex-start;gap:8px}
+.pmw-project-title{display:flex;align-items:center;gap:8px}
 .pmw-project-title h3{flex:1 1 auto;min-width:0;margin:0;font-size:14px;line-height:1.35;font-weight:800;color:var(--pmw-ink);word-break:break-word}
 .pmw-project-progress-label{font-size:11px;font-weight:800;color:var(--pmw-primary);white-space:nowrap}
+.pmw-project-done{flex:0 0 auto;font-size:9px;font-weight:800;color:var(--pmw-teal);background:var(--pmw-surface-2);
+  border:1px solid var(--pmw-line);border-radius:999px;padding:1px 6px;white-space:nowrap}
+.pmw-project-collapse{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;
+  border:1px solid var(--pmw-line);border-radius:7px;background:var(--pmw-surface);color:var(--pmw-muted);cursor:pointer}
+.pmw-project-collapse:hover{background:var(--pmw-surface-2);color:var(--pmw-ink)}
+.pmw-project-collapsed-hint{margin-top:7px;font-size:9.5px;line-height:1.5;color:var(--pmw-muted)}
+.pmw-project-knowledge{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:7px;padding-top:6px;border-top:1px solid var(--pmw-line)}
+.pmw-project-knowledge-label{display:inline-flex;align-items:center;gap:3px;font-size:8.5px;font-weight:800;color:var(--pmw-muted)}
+.pmw-knowledge-chip{max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:8.5px;color:var(--pmw-teal);
+  background:var(--pmw-surface-2);border-radius:999px;padding:1px 5px}
+.pmw-project-knowledge-btn{margin-left:auto;border:0;background:transparent;color:var(--pmw-primary);font-family:inherit;
+  font-size:8.5px;font-weight:700;padding:1px 2px;cursor:pointer;white-space:nowrap}
+.pmw-project-knowledge-btn:hover{text-decoration:underline}
+.pmw-knowledge-sheet{width:min(560px,calc(100vw - 24px));max-height:88vh}
+.pmw-knowledge-body{gap:7px;max-height:72vh;overflow-y:auto}
+.pmw-knowledge-project{display:flex;align-items:center;gap:5px;padding:6px 8px;border-radius:8px;background:var(--pmw-primary-faint);
+  color:var(--pmw-primary);font-size:9.5px;font-weight:700}
+.pmw-knowledge-toolbar{display:flex;align-items:center;gap:5px}
+.pmw-knowledge-toolbar .pmw-btn{flex:0 0 auto}
+.pmw-knowledge-layout{display:flex;flex-direction:column;gap:7px;min-height:0}
+.pmw-knowledge-folders{display:flex;gap:5px;overflow-x:auto;padding:1px 2px 3px;scrollbar-width:none}
+.pmw-knowledge-folders::-webkit-scrollbar{display:none}
+.pmw-knowledge-folder{flex:0 0 152px;display:flex;align-items:center;gap:6px;padding:7px 8px;border:1px solid var(--pmw-line);
+  border-radius:10px;background:var(--pmw-surface);color:var(--pmw-muted);font-family:inherit;text-align:left;cursor:pointer}
+.pmw-knowledge-folder.is-active{border-color:var(--pmw-primary);background:var(--pmw-primary-faint);color:var(--pmw-primary)}
+.pmw-knowledge-folder span{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px}
+.pmw-knowledge-folder b{font-size:10px;color:var(--pmw-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pmw-knowledge-folder small{font-size:8.5px;color:var(--pmw-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pmw-knowledge-folder em{flex:0 0 auto;font-size:8.5px;font-style:normal;color:var(--pmw-primary)}
+.pmw-knowledge-detail{display:flex;flex-direction:column;gap:5px;min-width:0}
+.pmw-knowledge-folder-head{display:flex;align-items:flex-start;gap:6px}
+.pmw-knowledge-folder-head>div{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px}
+.pmw-knowledge-folder-head b{font-size:11px;color:var(--pmw-ink)}
+.pmw-knowledge-folder-head small{font-size:8.5px;color:var(--pmw-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pmw-knowledge-projects{display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:8.5px;color:var(--pmw-muted)}
+.pmw-knowledge-files{display:flex;flex-direction:column;gap:2px;max-height:210px;overflow-y:auto;padding-right:2px}
+.pmw-knowledge-file{display:flex;align-items:center;gap:5px;padding:4px 5px;border-radius:6px;background:var(--pmw-surface-2);font-size:9.5px;color:var(--pmw-ink)}
+.pmw-knowledge-file span{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmw-knowledge-file small{flex:0 0 auto;font-size:8px;color:var(--pmw-muted)}
+.pmw-knowledge-empty{display:flex;flex-direction:column;align-items:center;gap:6px;padding:22px 10px;border:1px dashed var(--pmw-line-strong);border-radius:12px;text-align:center}
+.pmw-knowledge-empty b{font-size:12px;color:var(--pmw-ink)}
+.pmw-knowledge-empty p{margin:0;font-size:9.5px;line-height:1.5;color:var(--pmw-muted)}
+.pmw-knowledge-manual{display:flex;flex-direction:column;gap:4px;padding:9px;border:1px solid var(--pmw-line);border-radius:10px;background:var(--pmw-surface)}
+.pmw-knowledge-manual-head{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:800;color:var(--pmw-primary)}
+.pmw-knowledge-manual p{margin:0 0 2px;font-size:9px;line-height:1.45;color:var(--pmw-muted)}
+.pmw-knowledge-manual .pmw-sheet-label{margin-top:3px}
+.pmw-knowledge-manual textarea{min-height:52px}
+.pmw-manual-sheet{width:min(430px,calc(100vw - 24px));max-height:88vh}
+.pmw-manual-body{max-height:68vh;overflow-y:auto}
+.pmw-manual-notice{display:flex;align-items:flex-start;gap:6px;padding:7px 8px;margin-bottom:8px;border:1px solid var(--pmw-line);
+  border-radius:9px;background:var(--pmw-surface-2);color:var(--pmw-muted)}
+.pmw-manual-notice>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pmw-manual-notice b{font-size:9.5px;color:var(--pmw-ink)}
+.pmw-manual-notice span{font-size:8.8px;line-height:1.45;color:var(--pmw-muted)}
 .pmw-project-desc{margin:5px 0 0;font-size:11.5px;line-height:1.55;color:var(--pmw-muted);white-space:pre-wrap;word-break:break-word}
 .pmw-project-meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;font-size:10px;color:var(--pmw-muted)}
 .pmw-project-meta span{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:6px;background:var(--pmw-surface-2)}
@@ -833,6 +1068,13 @@ window.__ModuleLoader__.load({
 .pmw-mail-unread-dot{flex:0 0 5px;width:5px;height:5px;border-radius:50%;background:var(--pmw-primary);box-shadow:0 0 0 2px var(--pmw-primary-faint)}
 .pmw-inbox-head-main{flex:1 1 auto;min-width:0}
 .pmw-inbox-head h3{margin:0;font-size:13px;font-weight:800;color:var(--pmw-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmw-inbox-account{display:flex;align-items:center;gap:7px;padding:7px 8px;margin-bottom:7px;border:1px solid var(--pmw-line);
+  border-radius:10px;background:var(--pmw-surface-2)}
+.pmw-inbox-account-icon{display:flex;flex:0 0 auto;color:var(--pmw-primary)}
+.pmw-inbox-account-main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px}
+.pmw-inbox-account-main b{font-size:10.5px;color:var(--pmw-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pmw-inbox-account-main small{font-size:9px;color:var(--pmw-muted)}
+.pmw-inbox-account-actions{display:flex;flex:0 0 auto;gap:1px}
 .pmw-inbox-head small{display:block;margin-top:2px;font-size:9.5px;color:var(--pmw-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pmw-inbox-actions{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:7px}
 .pmw-inbox-setup{padding:12px 12px 10px;border:1px solid var(--pmw-line);border-radius:14px;background:var(--pmw-surface);box-shadow:var(--pmw-shadow-1)}
@@ -868,6 +1110,53 @@ window.__ModuleLoader__.load({
 .pmw-mail-todo-source span{display:inline-block;margin-top:1px;font-size:9.5px;color:var(--pmw-primary);font-weight:700}
 .pmw-mail-todo-source small{display:block;margin-top:1px;font-size:9px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pmw-memo-origin{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:var(--pmw-teal);font-weight:700}
+.pmw-feeds-add{display:flex;gap:5px;margin-bottom:8px}
+.pmw-feeds-type{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px}
+.pmw-feeds-type button{height:22px;padding:0 9px;border:1px solid var(--pmw-line);border-radius:999px;background:var(--pmw-surface);
+  color:var(--pmw-muted);font-family:inherit;font-size:9.5px;font-weight:700;cursor:pointer}
+.pmw-feeds-type button.is-active{border-color:var(--pmw-primary);background:var(--pmw-primary-faint);color:var(--pmw-primary)}
+.pmw-feeds-add .pmw-input{flex:1 1 auto;min-width:0;height:34px}
+.pmw-feeds-add .pmw-btn{flex:0 0 auto;white-space:nowrap}
+.pmw-feeds-empty{padding:14px 8px;text-align:center;font-size:10.5px;line-height:1.6;color:var(--pmw-muted)}
+.pmw-feeds-onboarding{display:flex;flex-direction:column;align-items:stretch;gap:5px;padding:12px 10px;margin-bottom:10px;
+  border:1px dashed var(--pmw-line-strong);border-radius:12px;background:var(--pmw-surface)}
+.pmw-feeds-onboarding-icon{display:flex;justify-content:center;color:var(--pmw-primary);margin-bottom:1px}
+.pmw-feeds-onboarding>b{font-size:12px;color:var(--pmw-ink);text-align:center}
+.pmw-feeds-onboarding>p{margin:0 0 3px;font-size:9.5px;line-height:1.55;color:var(--pmw-muted);text-align:center}
+.pmw-feeds-manage-body{padding:8px 8px 6px;margin-bottom:8px;border:1px solid var(--pmw-line);border-radius:10px;background:var(--pmw-surface-2)}
+.pmw-feeds-section-label{font-size:9px;font-weight:800;letter-spacing:.04em;color:var(--pmw-muted);margin-bottom:4px}
+.pmw-feed-groups{display:flex;flex-direction:column;gap:8px;max-height:190px;overflow-y:auto;padding-right:2px}
+.pmw-feed-group{display:flex;flex-direction:column;gap:4px}
+.pmw-feed-group-head{display:flex;align-items:center;gap:5px;padding:0 2px}
+.pmw-feed-group-head b{font-size:9.5px;font-weight:800;color:var(--pmw-ink)}
+.pmw-feed-group-head span{font-size:9px;color:var(--pmw-muted)}
+.pmw-feed-subscriptions{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.pmw-feed-subscriptions.is-managed{max-height:168px;overflow-y:auto;padding-right:2px}
+.pmw-feeds-summary{display:flex;align-items:center;gap:8px;padding:6px 2px 8px}
+.pmw-feeds-summary-main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px}
+.pmw-feeds-summary-main b{font-size:10.5px;color:var(--pmw-ink);font-weight:800}
+.pmw-feeds-summary-main small{font-size:9px;color:var(--pmw-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pmw-feeds-summary-main small.is-error{color:var(--pmw-danger)}
+.pmw-feeds-manage{flex:0 0 auto;border:0;background:transparent;color:var(--pmw-primary);font-size:9.5px;font-weight:700;
+  padding:3px 4px;cursor:pointer;font-family:inherit}
+.pmw-feeds-manage:hover{text-decoration:underline}
+.pmw-feed-sub{display:flex;align-items:center;gap:6px;padding:7px 8px;border:1px solid var(--pmw-line);border-radius:10px;background:var(--pmw-surface)}
+.pmw-feed-sub-main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px}
+.pmw-feed-sub-main b{font-size:11px;color:var(--pmw-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pmw-feed-sub-main small{font-size:9px;color:var(--pmw-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pmw-feed-sub-actions{display:flex;flex:0 0 auto;gap:1px}
+.pmw-feeds-items-title{margin:2px 0 6px;font-size:10px;font-weight:800;color:var(--pmw-muted);letter-spacing:.03em}
+.pmw-feeds-items{display:flex;flex-direction:column;gap:7px}
+.pmw-feed-item{padding:8px 9px;border:1px solid var(--pmw-line);border-radius:11px;background:var(--pmw-surface);cursor:pointer}
+.pmw-feed-item:hover{background:var(--pmw-surface-2)}
+.pmw-feed-item.is-expanded{border-color:var(--pmw-primary-soft);background:var(--pmw-surface-2);cursor:default}
+.pmw-feed-item-head{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.pmw-feed-item-head .pmw-channel-badge{max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmw-feed-item-toggle{margin-left:auto;flex:0 0 auto;width:16px;height:16px;display:flex;align-items:center;justify-content:center;
+  border-radius:5px;background:var(--pmw-primary-faint);color:var(--pmw-primary);font-size:12px;font-weight:700;line-height:1}
+.pmw-feed-item b{display:block;font-size:12px;line-height:1.4;color:var(--pmw-ink);word-break:break-word}
+.pmw-feed-item-url{display:block;margin-top:2px;font-size:9px;color:var(--pmw-teal);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmw-feed-item p{margin:4px 0 0;font-size:10px;line-height:1.5;color:var(--pmw-muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .pmw-inbox-hub-head{display:flex;align-items:flex-start;gap:8px;margin-bottom:9px}
 .pmw-inbox-hub-head h3{margin:0;font-size:14px;font-weight:800;color:var(--pmw-ink)}
 .pmw-inbox-hub-head p{margin:3px 0 0;font-size:10px;line-height:1.5;color:var(--pmw-muted)}
@@ -1047,6 +1336,14 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
         h('path', { key: 'a', d: 'M3.2 2.8h9.6v10.4H3.2z' }),
         h('path', { key: 'b', d: 'M5.6 5.8h4.8M5.6 8.2h4.8M5.6 10.6h3' }),
       ],
+      book: [
+        h('path', { key: 'a', d: 'M3.2 2.8h7.2a2.4 2.4 0 0 1 2.4 2.4v8H5.6a2.4 2.4 0 0 0-2.4 2.4z' }),
+        h('path', { key: 'b', d: 'M5.6 13.2V5.2h7.2' }),
+      ],
+      folder: [
+        h('path', { key: 'a', d: 'M2.4 4.2h4l1.4 1.6h5.8v7.4H2.4z' }),
+        h('path', { key: 'b', d: 'M2.4 7.4h11.2' }),
+      ],
       calendar: [
         h('rect', { key: 'a', x: 2.4, y: 3.4, width: 11.2, height: 10, rx: 2 }),
         h('path', { key: 'b', d: 'M2.4 6.6h11.2M5.2 2.2v2.4M10.8 2.2v2.4' }),
@@ -1065,6 +1362,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       ],
       left: [h('path', { key: 'a', d: 'M9.8 4.2L6 8l3.8 3.8' })],
       right: [h('path', { key: 'a', d: 'M6.2 4.2L10 8l-3.8 3.8' })],
+      down: [h('path', { key: 'a', d: 'M4.2 6.2L8 10l3.8-3.8' })],
       close: [h('path', { key: 'a', d: 'M4 4l8 8M12 4l-8 8' })],
       trash: [h('path', { key: 'a', d: 'M3.2 4.6h9.6M6.4 4.6V3.2h3.2v1.4M4.6 4.6l.6 8h5.6l.6-8' })],
       edit: [
@@ -1665,16 +1963,30 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
     }
 
     function normalizeOrigin(raw) {
-      if (!raw || typeof raw !== 'object' || raw.kind !== 'email') return null;
-      return {
-        kind: 'email',
-        channel: cleanString(raw.channel, 40) || 'qq-mail',
-        label: cleanString(raw.label, 80) || 'QQ 邮箱',
-        from: cleanString(raw.from, 300),
-        subject: cleanString(raw.subject, 300),
-        date: cleanString(raw.date, 40),
-        messageId: cleanString(raw.messageId, 100),
-      };
+      if (!raw || typeof raw !== 'object') return null;
+      if (raw.kind === 'email') {
+        return {
+          kind: 'email',
+          channel: cleanString(raw.channel, 40) || 'qq-mail',
+          label: cleanString(raw.label, 80) || 'QQ 邮箱',
+          from: cleanString(raw.from, 300),
+          subject: cleanString(raw.subject, 300),
+          date: cleanString(raw.date, 40),
+          messageId: cleanString(raw.messageId, 100),
+        };
+      }
+      if (raw.kind === 'web') {
+        return {
+          kind: 'web',
+          label: cleanString(raw.label, 80) || '信息订阅',
+          url: cleanString(raw.url, 1000),
+          title: cleanString(raw.title, 300),
+          publishedAt: cleanString(raw.publishedAt, 40),
+          subscriptionName: cleanString(raw.subscriptionName, 100),
+          keyword: cleanString(raw.keyword, 300),
+        };
+      }
+      return null;
     }
 
     function normalizeMemo(raw) {
@@ -2501,7 +2813,9 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           memo.repeat === 'daily' ? '- 重复：每天' : '',
           memo.origin && memo.origin.kind === 'email'
             ? `- 来源：邮件${memo.origin.from ? ' · ' + memo.origin.from : ''}${memo.origin.subject ? ' · ' + memo.origin.subject : ''}`
-            : '',
+            : memo.origin && memo.origin.kind === 'web'
+              ? `- 来源：订阅${memo.origin.keyword ? ' · ' + memo.origin.keyword : ''}${memo.origin.url ? ' · ' + memo.origin.url : ''}`
+              : '',
           `- 状态：${memo.done ? '已完成' : '未完成'}`,
           `- ID：${memo.id}`,
           '',
@@ -2515,7 +2829,9 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           memo.repeat === 'daily' ? '- Repeat: daily' : '',
           memo.origin && memo.origin.kind === 'email'
             ? `- Source: email${memo.origin.from ? ' · ' + memo.origin.from : ''}${memo.origin.subject ? ' · ' + memo.origin.subject : ''}`
-            : '',
+            : memo.origin && memo.origin.kind === 'web'
+              ? `- Source: feed${memo.origin.keyword ? ' · ' + memo.origin.keyword : ''}${memo.origin.url ? ' · ' + memo.origin.url : ''}`
+              : '',
           `- Status: ${memo.done ? 'done' : 'open'}`,
           `- ID: ${memo.id}`,
           '',
@@ -2932,11 +3248,11 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
         !props.editing && (metaTags.length || memo.dueDate || memo.pinned || memo.repeat === 'daily' || memo.projectId || memo.origin || hasTag(memo, '项目'))
           ? h('div', { className: 'pmw-memo-meta' },
             memo.pinned ? h('span', { className: 'pmw-pin', title: t('pin') }, h(Icon, { name: 'pin', size: 11 })) : null,
-            memo.origin && memo.origin.kind === 'email'
+            memo.origin
               ? h('span', {
                 className: 'pmw-memo-origin',
-                title: [memo.origin.label, memo.origin.from, memo.origin.subject].filter(Boolean).join(' · '),
-              }, h(Icon, { name: 'inbox', size: 11 }), t('from_mail'))
+                title: [memo.origin.label, memo.origin.from || memo.origin.url, memo.origin.subject || memo.origin.title].filter(Boolean).join(' · '),
+              }, h(Icon, { name: memo.origin.kind === 'web' ? 'rss' : 'inbox', size: 11 }), memo.origin.kind === 'web' ? t('from_feed') : t('from_mail'))
               : null,
             memo.projectId
               ? h('button', {
@@ -3203,11 +3519,257 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       );
     }
 
+    function ManualSheet(props) {
+      const folders = props.folders || [];
+      const [folderId, setFolderId] = useState(null);
+      const [form, setForm] = useState({ title: '', type: 'software', target: '', feature: '' });
+      useEffect(() => {
+        if (!props.open) return;
+        setFolderId((current) => (folders.some((folder) => folder.id === current)
+          ? current
+          : (props.defaultFolderId && folders.some((folder) => folder.id === props.defaultFolderId)
+            ? props.defaultFolderId
+            : (folders[0] ? folders[0].id : null))));
+      }, [props.open, props.defaultFolderId, folders.length]);
+      if (!props.open) return null;
+      const folder = folders.find((entry) => entry.id === folderId) || null;
+      return h('div', {
+        className: 'pmw-backdrop',
+        onMouseDown: (event) => { if (event.target === event.currentTarget) props.onClose(); },
+      },
+      h('div', { className: 'pmw-sheet pmw-manual-sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': t('knowledge_manual') },
+        h('div', { className: 'pmw-sheet-grip' }),
+        h('div', { className: 'pmw-sheet-head' },
+          h('div', { className: 'pmw-spark', style: { width: 26, height: 26, borderRadius: 9 } }, h(Icon, { name: 'sparkles', size: 14 })),
+          h('div', { style: { minWidth: 0, flex: 1 } },
+            h('h3', { style: { margin: 0 } }, t('knowledge_manual')),
+            h('small', { style: { display: 'block', marginTop: 2, color: 'var(--pmw-muted)', fontSize: 9.5 } }, t('knowledge_manual_auto_hint')),
+          ),
+          h('button', { type: 'button', className: 'pmw-iconbtn', onClick: props.onClose, 'aria-label': t('close') }, h(Icon, { name: 'close', size: 15 })),
+        ),
+        h('div', { className: 'pmw-sheet-body pmw-manual-body' },
+          h('div', { className: 'pmw-manual-notice' },
+            h(Icon, { name: 'alert', size: 13 }),
+            h('div', null,
+              h('b', null, t('manual_dependency_title')),
+              h('span', null, t('manual_dependency_desc')),
+            ),
+          ),
+          folders.length
+            ? h('div', null,
+              h('label', { className: 'pmw-sheet-label' }, t('knowledge_manual_folder')),
+              h('select', {
+                className: 'pmw-input',
+                style: { width: '100%', height: 34 },
+                value: folderId || '',
+                onChange: (event) => setFolderId(event.target.value),
+              }, folders.map((entry) => h('option', { key: entry.id, value: entry.id }, entry.name))),
+              h('label', { className: 'pmw-sheet-label' }, t('knowledge_manual_title')),
+              h('input', {
+                className: 'pmw-input',
+                style: { width: '100%' },
+                value: form.title,
+                placeholder: t('knowledge_manual_title_ph'),
+                onChange: (event) => setForm((current) => ({ ...current, title: event.target.value })),
+              }),
+              h('label', { className: 'pmw-sheet-label' }, t('knowledge_manual_type')),
+              h('div', { className: 'pmw-feeds-type' },
+                h('button', {
+                  type: 'button',
+                  className: form.type === 'software' ? 'is-active' : '',
+                  onClick: () => setForm((current) => ({ ...current, type: 'software' })),
+                }, t('knowledge_manual_software')),
+                h('button', {
+                  type: 'button',
+                  className: form.type === 'website' ? 'is-active' : '',
+                  onClick: () => setForm((current) => ({ ...current, type: 'website' })),
+                }, t('knowledge_manual_website')),
+              ),
+              h('label', { className: 'pmw-sheet-label' }, form.type === 'website' ? t('knowledge_manual_target_website') : t('knowledge_manual_target_software')),
+              h('input', {
+                className: 'pmw-input',
+                style: { width: '100%' },
+                value: form.target,
+                placeholder: form.type === 'website' ? t('knowledge_manual_target_website_ph') : t('knowledge_manual_target_software_ph'),
+                onChange: (event) => setForm((current) => ({ ...current, target: event.target.value })),
+              }),
+              h('label', { className: 'pmw-sheet-label' }, t('knowledge_manual_feature')),
+              h('textarea', {
+                value: form.feature,
+                placeholder: t('knowledge_manual_feature_ph'),
+                onChange: (event) => setForm((current) => ({ ...current, feature: event.target.value })),
+              }),
+              h('div', { className: 'pmw-mail-readonly' }, t('knowledge_manual_auto_hint')),
+            )
+            : props.loading
+              ? h('div', { className: 'pmw-feeds-empty' }, t('knowledge_manual_loading'))
+              : h('div', { className: 'pmw-knowledge-empty' },
+                h(Icon, { name: 'book', size: 26 }),
+                h('b', null, t('knowledge_manual_no_folder')),
+                h('p', null, t('knowledge_manual_no_folder_desc')),
+                h('button', { type: 'button', className: 'pmw-btn is-primary', onClick: props.onOpenKnowledge }, t('knowledge_add')),
+              ),
+        ),
+        h('div', { className: 'pmw-sheet-foot' },
+          h('button', { type: 'button', className: 'pmw-btn is-ghost', onClick: props.onClose }, t('cancel')),
+          h('button', {
+            type: 'button',
+            className: 'pmw-btn is-primary',
+            disabled: !folder || !form.title.trim() || !form.target.trim() || !form.feature.trim(),
+            onClick: () => props.onGenerate({ folder, ...form }),
+          }, t('knowledge_manual_generate')),
+        ),
+      ));
+    }
+
+    function KnowledgeSheet(props) {
+      const folders = props.folders || [];
+      const projects = props.projects || [];
+      const [selectedId, setSelectedId] = useState(null);
+      useEffect(() => {
+        if (!props.open) return;
+        setSelectedId((current) => (folders.some((folder) => folder.id === current)
+          ? current
+          : (folders[0] ? folders[0].id : null)));
+      }, [props.open, folders.length]);
+      if (!props.open) return null;
+      const selected = folders.find((folder) => folder.id === selectedId) || folders[0] || null;
+      const project = props.projectId ? projects.find((entry) => entry.id === props.projectId) : null;
+      const projectName = (id) => {
+        const found = projects.find((entry) => entry.id === id);
+        return found ? found.name : id;
+      };
+      return h('div', {
+        className: 'pmw-backdrop',
+        onMouseDown: (event) => { if (event.target === event.currentTarget) props.onClose(); },
+      },
+      h('div', { className: 'pmw-sheet pmw-knowledge-sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': t('knowledge_title') },
+        h('div', { className: 'pmw-sheet-grip' }),
+        h('div', { className: 'pmw-sheet-head' },
+          h('div', { className: 'pmw-spark', style: { width: 26, height: 26, borderRadius: 9 } }, h(Icon, { name: 'book', size: 14 })),
+          h('div', { style: { minWidth: 0, flex: 1 } },
+            h('h3', { style: { margin: 0 } }, t('knowledge_title')),
+            h('small', { style: { display: 'block', marginTop: 2, color: 'var(--pmw-muted)', fontSize: 9.5 } }, t('knowledge_desc')),
+          ),
+          h('button', { type: 'button', className: 'pmw-iconbtn', onClick: props.onClose, 'aria-label': t('close') }, h(Icon, { name: 'close', size: 15 })),
+        ),
+        h('div', { className: 'pmw-sheet-body pmw-knowledge-body' },
+          project
+            ? h('div', { className: 'pmw-knowledge-project' }, h(Icon, { name: 'project', size: 12 }), t('knowledge_current_project', { name: project.name }))
+            : null,
+          h('div', { className: 'pmw-knowledge-toolbar' },
+            h('button', {
+              type: 'button',
+              className: 'pmw-btn is-primary',
+              disabled: props.loading,
+              onClick: props.onAdd,
+            }, h(Icon, { name: 'plus', size: 12 }), t('knowledge_add')),
+            h('button', {
+              type: 'button',
+              className: 'pmw-iconbtn',
+              title: t('refresh'),
+              disabled: props.loading,
+              onClick: props.onRefresh,
+            }, h(Icon, { name: 'refresh', size: 13 })),
+          ),
+          props.error ? h('div', { className: 'pmw-inbox-error' }, props.error) : null,
+          folders.length
+            ? h('div', { className: 'pmw-knowledge-layout' },
+              h('div', { className: 'pmw-knowledge-folders' }, folders.map((folder) => h('button', {
+                key: folder.id,
+                type: 'button',
+                className: 'pmw-knowledge-folder' + (selected && selected.id === folder.id ? ' is-active' : ''),
+                onClick: () => setSelectedId(folder.id),
+              },
+              h(Icon, { name: 'folder', size: 13 }),
+              h('span', null,
+                h('b', null, folder.name),
+                h('small', null, folder.missing ? t('knowledge_missing') : t('knowledge_files', { n: folder.fileCount || 0 })),
+              ),
+              folder.projectIds && folder.projectIds.length
+                ? h('em', null, folder.projectIds.length)
+                : null,
+              ))),
+              selected
+                ? h('div', { className: 'pmw-knowledge-detail' },
+                  h('div', { className: 'pmw-knowledge-folder-head' },
+                    h('div', null,
+                      h('b', null, selected.name),
+                      h('small', { title: selected.path }, selected.path),
+                    ),
+                    project
+                      ? h('button', {
+                        type: 'button',
+                        className: 'pmw-btn is-ghost',
+                        onClick: () => props.onLink(selected.id, project.id, !(selected.projectIds || []).includes(project.id)),
+                      }, (selected.projectIds || []).includes(project.id) ? t('knowledge_unlink') : t('knowledge_link'))
+                      : null,
+                  ),
+                  selected.projectIds && selected.projectIds.length
+                    ? h('div', { className: 'pmw-knowledge-projects' },
+                      h('span', null, t('knowledge_projects')),
+                      selected.projectIds.map((id) => h('span', { key: id, className: 'pmw-channel-badge' }, projectName(id))),
+                    )
+                    : null,
+                  selected.missing
+                    ? h('div', { className: 'pmw-inbox-error' }, t('knowledge_missing'))
+                    : selected.files && selected.files.length
+                      ? h('div', { className: 'pmw-knowledge-files' }, selected.files.map((file) => h('div', {
+                        key: file.relativePath,
+                        className: 'pmw-knowledge-file',
+                        title: file.path,
+                      },
+                      h(Icon, { name: 'note', size: 12 }),
+                      h('span', null, file.relativePath),
+                      h('small', null, `${Math.max(1, Math.round(file.size / 1024))} KB`),
+                      )))
+                      : h('div', { className: 'pmw-feeds-empty' }, t('knowledge_no_files')),
+                  selected.files && selected.files.length >= (props.maxFiles || 300)
+                    ? h('div', { className: 'pmw-mail-readonly' }, t('knowledge_too_many', { n: props.maxFiles || 300 }))
+                    : null,
+                  h('div', { className: 'pmw-inbox-actions' },
+                    h('button', {
+                      type: 'button',
+                      className: 'pmw-btn is-primary',
+                      disabled: selected.missing,
+                      title: `${t('knowledge_manual')} · ${t('manual_dependency_title')}`,
+                      onClick: () => props.onOpenManual(selected.id),
+                    }, h(Icon, { name: 'sparkles', size: 12 }), t('knowledge_manual')),
+                    h('button', {
+                      type: 'button',
+                      className: 'pmw-btn is-ghost',
+                      onClick: () => props.onRemove(selected.id),
+                    }, h(Icon, { name: 'trash', size: 12 }), t('knowledge_remove')),
+                  ),
+                )
+                : null,
+            )
+            : h('div', { className: 'pmw-knowledge-empty' },
+              h(Icon, { name: 'book', size: 26 }),
+              h('b', null, t('knowledge_empty')),
+              h('p', null, t('knowledge_empty_desc')),
+              h('button', { type: 'button', className: 'pmw-btn is-primary', disabled: props.loading, onClick: props.onAdd }, t('knowledge_add')),
+            ),
+        ),
+      ));
+    }
+
     function ProjectsView(props) {
       const projects = props.projects || [];
       const selected = projects.find((project) => project.id === props.selectedId) || projects[0] || null;
       const progress = selected ? projectProgress(selected) : 0;
       const conflicts = selected ? dependencyConflicts(selected) : [];
+      const knowledgeFolders = (props.knowledge && props.knowledge.folders) || [];
+      const linkedKnowledge = selected
+        ? knowledgeFolders.filter((folder) => (folder.projectIds || []).includes(selected.id))
+        : [];
+      const [expandedCompleted, setExpandedCompleted] = useState({});
+      const completed = progress >= 100;
+      const collapsed = !!selected && completed && !expandedCompleted[selected.id];
+      const toggleCollapsed = () => {
+        if (!selected || !completed) return;
+        setExpandedCompleted((current) => ({ ...current, [selected.id]: collapsed }));
+      };
       return h('div', { className: 'pmw-projects' },
         projects.length
           ? h('div', { className: 'pmw-project-switch' },
@@ -3229,9 +3791,20 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           ? h('div', { className: 'pmw-project-card' },
             h('div', { className: 'pmw-project-title' },
               h('h3', null, selected.name),
+              completed ? h('span', { className: 'pmw-project-done' }, t('project_completed')) : null,
               h('span', { className: 'pmw-project-progress-label' }, `${progress}%`),
+              completed
+                ? h('button', {
+                  type: 'button',
+                  className: 'pmw-project-collapse',
+                  title: collapsed ? t('project_expand') : t('project_collapse'),
+                  'aria-label': collapsed ? t('project_expand') : t('project_collapse'),
+                  'aria-expanded': !collapsed,
+                  onClick: toggleCollapsed,
+                }, h(Icon, { name: collapsed ? 'right' : 'down', size: 13 }))
+                : null,
             ),
-            selected.description ? h('p', { className: 'pmw-project-desc' }, selected.description) : null,
+            selected.description && !collapsed ? h('p', { className: 'pmw-project-desc' }, selected.description) : null,
             h('div', { className: 'pmw-project-meta' },
               h('span', null, h(Icon, { name: 'user', size: 10 }), `${selected.owner || t('task_self')}${selected.role ? ' · ' + selected.role : ''}`),
               selected.startDate || selected.dueDate
@@ -3240,6 +3813,16 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
               h('span', null, h(Icon, { name: 'project', size: 10 }), t('project_tasks', { n: selected.tasks.length })),
             ),
             h('div', { className: 'pmw-project-bar' }, h('i', { style: { width: `${progress}%` } })),
+            h('div', { className: 'pmw-project-knowledge' },
+              h('span', { className: 'pmw-project-knowledge-label' }, h(Icon, { name: 'book', size: 11 }), t('knowledge')),
+              linkedKnowledge.slice(0, 2).map((folder) => h('span', { key: folder.id, className: 'pmw-knowledge-chip', title: folder.path }, folder.name)),
+              linkedKnowledge.length > 2 ? h('span', { className: 'pmw-knowledge-chip' }, `+${linkedKnowledge.length - 2}`) : null,
+              h('button', {
+                type: 'button',
+                className: 'pmw-project-knowledge-btn',
+                onClick: () => props.onOpenKnowledge(selected.id),
+              }, linkedKnowledge.length ? t('knowledge_manage') : t('knowledge_project_link')),
+            ),
             conflicts.length
               ? h('div', { className: 'pmw-dep-warning' },
                 h(Icon, { name: 'alert', size: 12 }),
@@ -3250,19 +3833,23 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
                 }, t('deps_fix')),
               )
               : null,
-            h(Gantt, {
-              project: selected,
-              now: props.now,
-              onEditTask: (task) => props.onEditTask(selected, task),
-              onReorderTasks: (fromId, toId) => props.onReorderTasks(selected.id, fromId, toId),
-            }),
-            h('div', { className: 'pmw-gantt-hint' }, t('gantt_drag_hint')),
-            h('button', {
-              type: 'button',
-              className: 'pmw-btn is-ghost',
-              style: { marginTop: 8, width: '100%' },
-              onClick: () => props.onAddTask(selected),
-            }, '+ ', t('project_new_task')),
+            collapsed
+              ? h('div', { className: 'pmw-project-collapsed-hint' }, t('project_collapsed_hint'))
+              : h('div', null,
+                h(Gantt, {
+                  project: selected,
+                  now: props.now,
+                  onEditTask: (task) => props.onEditTask(selected, task),
+                  onReorderTasks: (fromId, toId) => props.onReorderTasks(selected.id, fromId, toId),
+                }),
+                h('div', { className: 'pmw-gantt-hint' }, t('gantt_drag_hint')),
+                h('button', {
+                  type: 'button',
+                  className: 'pmw-btn is-ghost',
+                  style: { marginTop: 8, width: '100%' },
+                  onClick: () => props.onAddTask(selected),
+                }, '+ ', t('project_new_task')),
+              ),
           )
           : h('div', { className: 'pmw-empty' },
             h(Icon, { name: 'project', size: 28 }),
@@ -3647,193 +4234,394 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       ));
     }
 
+    function FeedsPanel(props) {
+      const feeds = props.feeds || { subscriptions: [], items: [], loading: false, error: null };
+      const [value, setValue] = useState('');
+      const [busy, setBusy] = useState(false);
+      const [error, setError] = useState('');
+      const [manageOpen, setManageOpen] = useState(false);
+      const [expandedId, setExpandedId] = useState(null);
+      const [subscribeType, setSubscribeType] = useState('keyword');
+      const subscriptions = feeds.subscriptions || [];
+      const items = (feeds.items || []).slice().sort((a, b) => {
+        const at = Date.parse(a.publishedAt || a.fetchedAt || '') || 0;
+        const bt = Date.parse(b.publishedAt || b.fetchedAt || '') || 0;
+        return bt - at;
+      });
+      const byId = new Map(subscriptions.map((feed) => [feed.id, feed]));
+      const feedGroups = [
+        { type: 'keyword', label: t('feeds_type_keyword') },
+        { type: 'url', label: t('feeds_type_url') },
+        { type: 'wechat', label: t('feeds_type_wechat') },
+      ].map((group) => ({ ...group, feeds: subscriptions.filter((feed) => feed.type === group.type) }))
+        .filter((group) => group.feeds.length > 0);
+      const typeCounts = feedGroups.map((group) => `${group.label} ${group.feeds.length}`).join(' · ');
+      async function submit() {
+        if (!value.trim()) return;
+        setBusy(true);
+        setError('');
+        const result = await props.onAdd(value.trim(), undefined, subscribeType);
+        setBusy(false);
+        if (result && result.error) setError(result.error);
+        else setValue('');
+      }
+      return h('div', { className: 'pmw-feeds' },
+        props.embedded ? null : h('div', { className: 'pmw-inbox-head' },
+          h('button', {
+            type: 'button',
+            className: 'pmw-iconbtn',
+            title: t('inbox_back'),
+            onClick: props.onBack,
+          }, h(Icon, { name: 'back', size: 14 })),
+          h('div', { className: 'pmw-inbox-head-main' },
+            h('h3', null, t('feeds_title')),
+            h('small', null, t('feeds_hourly')),
+          ),
+          h('button', {
+            type: 'button',
+            className: 'pmw-iconbtn',
+            title: t('feeds_refresh'),
+            disabled: feeds.loading,
+            onClick: props.onRefresh,
+          }, h(Icon, { name: 'refresh', size: 14 })),
+        ),
+        subscriptions.length === 0
+          ? h('div', { className: 'pmw-feeds-onboarding' },
+            h('span', { className: 'pmw-feeds-onboarding-icon' }, h(Icon, { name: 'rss', size: 20 })),
+            h('b', null, t('feeds_empty_title')),
+            h('p', null, t('feeds_empty_desc')),
+            h('div', { className: 'pmw-feeds-type' },
+              h('button', {
+                type: 'button',
+                className: subscribeType === 'keyword' ? 'is-active' : '',
+                onClick: () => setSubscribeType('keyword'),
+              }, t('feeds_type_keyword')),
+              h('button', {
+                type: 'button',
+                className: subscribeType === 'url' ? 'is-active' : '',
+                onClick: () => setSubscribeType('url'),
+              }, t('feeds_type_url')),
+              h('button', {
+                type: 'button',
+                className: subscribeType === 'wechat' ? 'is-active' : '',
+                onClick: () => setSubscribeType('wechat'),
+              }, t('feeds_type_wechat')),
+            ),
+            h('div', { className: 'pmw-feeds-add' },
+              h('input', {
+                className: 'pmw-input',
+                value,
+                placeholder: subscribeType === 'url' ? t('feeds_add_url_ph') : subscribeType === 'wechat' ? t('feeds_add_wechat_ph') : t('feeds_add_ph'),
+                onChange: (event) => setValue(event.target.value),
+                onKeyDown: (event) => { if (event.key === 'Enter') submit(); },
+              }),
+              h('button', {
+                type: 'button',
+                className: 'pmw-btn is-primary',
+                disabled: busy || !value.trim(),
+                onClick: submit,
+              }, busy ? t('feeds_running') : t('feeds_add')),
+            ),
+            subscribeType === 'url'
+              ? h('div', { className: 'pmw-mail-readonly' }, t('feeds_url_hint'))
+              : subscribeType === 'wechat'
+                ? h('div', { className: 'pmw-mail-readonly' }, t('feeds_wechat_hint'))
+                : null,
+          )
+          : null,
+        subscriptions.length
+          ? h('div', null,
+            h('div', { className: 'pmw-feeds-summary' },
+              h('div', { className: 'pmw-feeds-summary-main' },
+                h('b', null, t('feeds_summary', { n: subscriptions.length })),
+                h('small', {
+                  className: subscriptions.some((feed) => feed.lastError) ? 'is-error' : '',
+                  title: subscriptions.map((feed) => feed.value).join('、'),
+                }, subscriptions.some((feed) => feed.lastError)
+                  ? t('feeds_failed', { n: subscriptions.filter((feed) => feed.lastError).length })
+                  : typeCounts),
+              ),
+              h('button', {
+                type: 'button',
+                className: 'pmw-feeds-manage',
+                onClick: () => setManageOpen((open) => !open),
+              }, manageOpen ? t('feeds_collapse') : t('feeds_manage')),
+            ),
+            manageOpen
+              ? h('div', { className: 'pmw-feeds-manage-body' },
+                h('div', { className: 'pmw-feeds-section-label' }, t('feeds_add')),
+                h('div', { className: 'pmw-feeds-type' },
+                  h('button', {
+                    type: 'button',
+                    className: subscribeType === 'keyword' ? 'is-active' : '',
+                    onClick: () => setSubscribeType('keyword'),
+                  }, t('feeds_type_keyword')),
+                  h('button', {
+                    type: 'button',
+                    className: subscribeType === 'url' ? 'is-active' : '',
+                    onClick: () => setSubscribeType('url'),
+                  }, t('feeds_type_url')),
+                  h('button', {
+                    type: 'button',
+                    className: subscribeType === 'wechat' ? 'is-active' : '',
+                    onClick: () => setSubscribeType('wechat'),
+                  }, t('feeds_type_wechat')),
+                ),
+                h('div', { className: 'pmw-feeds-add' },
+                  h('input', {
+                    className: 'pmw-input',
+                    value,
+                    placeholder: subscribeType === 'url' ? t('feeds_add_url_ph') : subscribeType === 'wechat' ? t('feeds_add_wechat_ph') : t('feeds_add_ph'),
+                    onChange: (event) => setValue(event.target.value),
+                    onKeyDown: (event) => { if (event.key === 'Enter') submit(); },
+                  }),
+                  h('button', {
+                    type: 'button',
+                    className: 'pmw-btn is-primary',
+                    disabled: busy || !value.trim(),
+                    onClick: submit,
+                  }, busy ? t('feeds_running') : t('feeds_add')),
+                ),
+                subscribeType === 'url'
+              ? h('div', { className: 'pmw-mail-readonly' }, t('feeds_url_hint'))
+              : subscribeType === 'wechat'
+                ? h('div', { className: 'pmw-mail-readonly' }, t('feeds_wechat_hint'))
+                : null,
+                h('div', { className: 'pmw-feed-groups' }, feedGroups.map((group) => h('div', {
+                  key: group.type,
+                  className: 'pmw-feed-group',
+                },
+                h('div', { className: 'pmw-feed-group-head' },
+                  h('b', null, group.label),
+                  h('span', null, group.feeds.length),
+                ),
+                group.feeds.map((feed) => h('div', {
+                  key: feed.id,
+                  className: 'pmw-feed-sub',
+                },
+                h('div', { className: 'pmw-feed-sub-main' },
+                  h('b', null, feed.name),
+                  h('small', null, feed.type === 'url'
+                    ? `${t('feeds_type_url')} · ${feed.value}`
+                    : feed.type === 'wechat'
+                      ? `${t('feeds_type_wechat')} · ${feed.value}`
+                      : feed.value),
+                  h('small', null, feed.lastError
+                    ? t('feeds_error', { message: feed.lastError })
+                    : feed.lastRunAt
+                      ? t('feeds_last', { time: mailDateLabel(feed.lastRunAt, props.now) })
+                      : t('feeds_hourly')),
+                ),
+                h('div', { className: 'pmw-feed-sub-actions' },
+                  h('button', {
+                    type: 'button',
+                    className: 'pmw-iconbtn',
+                    title: t('feeds_run'),
+                    disabled: feeds.loading,
+                    onClick: () => props.onRun(feed.id),
+                  }, h(Icon, { name: 'refresh', size: 13 })),
+                  h('button', {
+                    type: 'button',
+                    className: 'pmw-iconbtn',
+                    title: t('delete'),
+                    onClick: () => props.onDelete(feed.id),
+                  }, h(Icon, { name: 'trash', size: 13 })),
+                ),
+                )),
+                ))),
+              )
+              : null,
+          )
+          : null,
+        error || feeds.error ? h('div', { className: 'pmw-inbox-error' }, error || feeds.error) : null,
+        h('div', { className: 'pmw-feeds-items-title' }, t('feeds_latest')),
+        items.length
+          ? h('div', { className: 'pmw-feeds-items' }, items.map((item) => {
+            const feed = byId.get(item.subscriptionId);
+            let host = '';
+            try { host = new URL(item.url).hostname; } catch (err) { host = item.url; }
+            const open = expandedId === item.id;
+            const toggle = () => setExpandedId(open ? null : item.id);
+            return h('div', {
+              key: item.id,
+              className: 'pmw-feed-item' + (open ? ' is-expanded' : ''),
+              role: 'button',
+              tabIndex: 0,
+              'aria-expanded': open,
+              onClick: toggle,
+              onKeyDown: (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  toggle();
+                }
+              },
+            },
+              h('div', { className: 'pmw-feed-item-head' },
+                h('span', { className: 'pmw-channel-badge' }, feed ? feed.name : t('inbox_channel_feeds')),
+                h('span', { className: 'pmw-mail-date' }, item.publishedAt ? mailDateLabel(item.publishedAt, props.now) : mailDateLabel(item.fetchedAt, props.now)),
+                h('span', { className: 'pmw-feed-item-toggle' }, open ? '−' : '+'),
+              ),
+              h('b', null, item.title),
+              h('span', { className: 'pmw-feed-item-url' }, host),
+              item.snippet || item.summary ? h('p', null, item.snippet || item.summary) : null,
+              open ? h('div', {
+                className: 'pmw-inbox-actions',
+                onClick: (event) => event.stopPropagation(),
+              },
+                item.url ? h('a', {
+                  className: 'pmw-btn is-ghost',
+                  href: item.url,
+                  target: '_blank',
+                  rel: 'noopener noreferrer',
+                }, t('inbox_open_memo')) : null,
+                h('button', {
+                  type: 'button',
+                  className: 'pmw-btn is-primary',
+                  onClick: () => props.onAddMemo({ ...item, subscriptionName: feed ? feed.name : '', keyword: feed ? feed.value : '' }),
+                }, t('inbox_add_todo')),
+              ) : null,
+            );
+          }))
+          : h('div', { className: 'pmw-feeds-empty' }, t('feeds_no_items')),
+      );
+    }
+
     function InboxView(props) {
       const status = props.status;
       const messages = props.messages || [];
-      const [activeChannel, setActiveChannel] = useState('all');
+      const feeds = props.feeds || { subscriptions: [], items: [], loading: false, error: null };
+      const [tab, setTab] = useState('mail');
       const [selectedId, setSelectedId] = useState(null);
-      const [setupOpen, setSetupOpen] = useState(false);
-      const [pickerOpen, setPickerOpen] = useState(false);
       const configured = !!(status && status.configured);
-      useEffect(() => { if (configured) setSetupOpen(false); }, [configured]);
-      useEffect(() => { setSelectedId(null); }, [activeChannel]);
+      const selected = messages.find((message) => message.id === selectedId) || null;
+      useEffect(() => { setSelectedId(null); }, [tab]);
+      useEffect(() => {
+        if (tab === 'feeds' && typeof props.onLoadFeeds === 'function') props.onLoadFeeds();
+      }, [tab]);
       useEffect(() => {
         if (selectedId && !messages.some((message) => message.id === selectedId)) setSelectedId(null);
       }, [messages, selectedId]);
 
-      const items = messages.map((message) => ({ ...message, channelId: message.channelId || 'qq-mail' }));
-      const backendChannels = status && Array.isArray(status.channels) ? status.channels : [];
-      const connectedChannels = configured
-        ? (backendChannels.length
-          ? backendChannels.filter((channel) => channel.configured !== false).map((channel) => {
-            const known = INBOX_CHANNELS.find((entry) => entry.id === channel.id) || INBOX_CHANNELS[0];
-            return { ...known, ...channel, icon: channel.icon || known.icon, nameKey: channel.nameKey || known.nameKey };
-          })
-          : INBOX_CHANNELS.filter((channel) => channel.available === true))
-        : [];
-      const channelName = (channel) => {
-        if (!channel) return t('inbox_channel_qq');
-        if (channel.id === 'qq-mail') return t('inbox_channel_qq');
-        return channel.name || t(channel.nameKey || 'inbox_channel_qq');
-      };
-      const multi = connectedChannels.length > 1;
-      const isAll = !multi || activeChannel === 'all';
-      const visible = isAll ? items : items.filter((item) => item.channelId === activeChannel);
-      const selected = items.find((message) => message.id === selectedId) || null;
-      const lastSync = status && status.lastSyncAt ? mailDateLabel(status.lastSyncAt, props.now) : '';
-      const syncLabel = lastSync ? t('inbox_sync_at', { time: lastSync }) : '';
-
-      if (!configured) {
-        if (setupOpen) {
-          return h('div', { className: 'pmw-inbox' },
-            h(InboxSetup, { onConnect: props.onConnect, onBack: () => setSetupOpen(false) }),
-          );
-        }
-        return h('div', { className: 'pmw-inbox' },
-          h('div', { className: 'pmw-inbox-hub-head' },
-            h('div', { className: 'pmw-inbox-head-main' },
-              h('h3', null, t('inbox_title')),
-              h('p', null, t('inbox_hub_sub')),
-            ),
-            h('button', {
-              type: 'button',
-              className: 'pmw-btn is-primary',
-              onClick: () => setSetupOpen(true),
-            }, h(Icon, { name: 'inbox', size: 12 }), t('inbox_setup_title')),
-          ),
-          h('div', { className: 'pmw-channel-empty' },
-            h(Icon, { name: 'inbox', size: 24 }),
-            h('h4', null, t('inbox_hub_empty')),
-            h('p', null, t('inbox_hub_empty_desc')),
-          ),
-          h('div', { className: 'pmw-channel-future' },
-            h('span', { className: 'pmw-channel-future-label' }, t('inbox_soon')),
-            h('div', { className: 'pmw-channel-chip-row' },
-              INBOX_CHANNELS.filter((channel) => channel.available !== true).map((channel) => h('span', {
-                key: channel.id,
-                className: 'pmw-channel-chip',
-              }, h(Icon, { name: channel.icon, size: 11 }), t(channel.nameKey))),
-            ),
-          ),
-          h('div', { className: 'pmw-mail-readonly' }, t('inbox_readonly')),
-        );
-      }
-
-      if (selected) {
-        return h('div', { className: 'pmw-inbox' },
-          h('div', { className: 'pmw-inbox-head' },
-            h('button', {
-              type: 'button',
-              className: 'pmw-iconbtn',
-              title: t('inbox_back'),
-              onClick: () => setSelectedId(null),
-            }, h(Icon, { name: 'back', size: 14 })),
-            h('div', { className: 'pmw-inbox-head-main' },
-              h('small', null, connectedChannels.some((channel) => channel.id === selected.channelId)
-                ? channelName(connectedChannels.find((channel) => channel.id === selected.channelId))
-                : (selected.from || t('inbox_from'))),
-            ),
-          ),
-          h('div', { className: 'pmw-mail-detail' },
-            h('div', { className: 'pmw-mail-detail-head' },
-              h('h3', null, selected.subject),
-              h('div', { className: 'pmw-mail-detail-meta' },
-                h('span', null, selected.from || t('inbox_from')),
-                h('span', null, new Date(selected.date).toLocaleString('zh-CN')),
-              ),
-            ),
-            h('div', { className: 'pmw-mail-body' }, selected.text || selected.preview || ''),
-            h('div', { className: 'pmw-inbox-actions' },
-              h('button', {
-                type: 'button',
-                className: 'pmw-btn is-primary',
-                onClick: () => props.onAddMemo(selected),
-              }, h(Icon, { name: 'note', size: 12 }), t('inbox_add_todo')),
-            ),
-            h('div', { className: 'pmw-mail-readonly' }, t('inbox_readonly')),
-          ),
-        );
-      }
-
-      const subtitle = multi
-        ? `${t('inbox_messages', { n: items.length })} · ${t('inbox_channels_count', { n: connectedChannels.length })}${syncLabel ? ` · ${syncLabel}` : ''}`
-        : `${status.email || ''} · ${t('inbox_messages', { n: items.length })}${syncLabel ? ` · ${syncLabel}` : ''}`;
       return h('div', { className: 'pmw-inbox' },
         h('div', { className: 'pmw-inbox-head' },
           h('div', { className: 'pmw-inbox-head-main' },
-            h('h3', null, isAll ? t('inbox_title') : channelName(connectedChannels.find((channel) => channel.id === activeChannel) || connectedChannels[0])),
-            h('small', null, subtitle),
+            h('h3', null, t('inbox_title')),
           ),
-          h('div', { className: 'pmw-inbox-head-actions' },
-            h('button', {
+          tab === 'feeds'
+            ? h('button', {
               type: 'button',
               className: 'pmw-iconbtn',
-              title: t('inbox_sync'),
-              disabled: props.syncing,
-              onClick: () => props.onSync(true),
-            }, h(Icon, { name: 'refresh', size: 14 })),
-            h('button', {
-              type: 'button',
-              className: 'pmw-iconbtn',
-              title: t('inbox_add_channel'),
-              onClick: () => setPickerOpen((value) => !value),
-            }, '+'),
-          ),
-        ),
-        multi
-          ? h('div', { className: 'pmw-channel-tabs', role: 'tablist', 'aria-label': t('inbox_channels') },
-            h('button', {
-              type: 'button',
-              role: 'tab',
-              'aria-selected': isAll,
-              className: 'pmw-channel-tab' + (isAll ? ' is-active' : ''),
-              onClick: () => setActiveChannel('all'),
-            }, t('inbox_all'), h('span', { className: 'pmw-channel-count' }, items.length)),
-            connectedChannels.map((channel) => h('button', {
-              key: channel.id,
-              type: 'button',
-              role: 'tab',
-              'aria-selected': activeChannel === channel.id,
-              className: 'pmw-channel-tab' + (activeChannel === channel.id ? ' is-active' : ''),
-              onClick: () => setActiveChannel(channel.id),
-            }, h(Icon, { name: channel.icon, size: 12 }), channelName(channel))),
-          )
-          : null,
-        pickerOpen
-          ? h(InboxChannelPicker, {
-            configured: true,
-            onClose: () => setPickerOpen(false),
-            onPick: (id) => {
-              setPickerOpen(false);
-              if (id === 'qq-mail') setActiveChannel(multi ? 'qq-mail' : 'all');
-            },
-            onDisconnect: () => { setPickerOpen(false); props.onDisconnect(); },
-          })
-          : null,
-        props.error ? h('div', { className: 'pmw-inbox-error' }, props.error) : null,
-        visible.length
-          ? h('div', { className: 'pmw-inbox-list' }, visible.map((message) => h('button', {
-            key: message.id,
-            type: 'button',
-            className: 'pmw-mail' + (message.unread ? ' is-unread' : ''),
-            onClick: () => setSelectedId(message.id),
-          },
-          h('span', { className: 'pmw-mail-top' },
-            message.unread ? h('span', { className: 'pmw-mail-unread-dot' }) : null,
-            h('span', { className: 'pmw-mail-from', title: message.from || '' }, mailFromLabel(message.from) || t('inbox_from')),
-            h('span', { className: 'pmw-mail-date' }, mailDateLabel(message.date, props.now)),
-          ),
-          h('span', { className: 'pmw-mail-subject' }, message.subject),
-          h('span', { className: 'pmw-mail-preview' }, message.preview || ''),
-          multi && isAll
-            ? h('span', { className: 'pmw-mail-meta' }, h('span', { className: 'pmw-channel-badge' },
-              channelName(connectedChannels.find((channel) => channel.id === message.channelId) || connectedChannels[0])))
+              title: t('feeds_refresh'),
+              disabled: feeds.loading,
+              onClick: () => props.onLoadFeeds(),
+            }, h(Icon, { name: 'refresh', size: 14 }))
             : null,
-          )))
-          : h('div', { className: 'pmw-empty' },
-            h(Icon, { name: 'inbox', size: 26 }),
-            h('h4', null, props.syncing ? t('inbox_syncing') : t('inbox_empty')),
-          ),
+        ),
+        h('div', { className: 'pmw-channel-tabs', role: 'tablist', 'aria-label': t('inbox_title') },
+          h('button', {
+            type: 'button',
+            role: 'tab',
+            'aria-selected': tab === 'mail',
+            className: 'pmw-channel-tab' + (tab === 'mail' ? ' is-active' : ''),
+            onClick: () => setTab('mail'),
+          }, h(Icon, { name: 'inbox', size: 12 }), t('inbox_tab_mail'), h('span', { className: 'pmw-channel-count' }, messages.length)),
+          h('button', {
+            type: 'button',
+            role: 'tab',
+            'aria-selected': tab === 'feeds',
+            className: 'pmw-channel-tab' + (tab === 'feeds' ? ' is-active' : ''),
+            onClick: () => setTab('feeds'),
+          }, h(Icon, { name: 'rss', size: 12 }), t('inbox_tab_feeds'), h('span', { className: 'pmw-channel-count' }, feeds.subscriptions.length)),
+        ),
+        tab === 'feeds'
+          ? h(FeedsPanel, {
+            embedded: true,
+            feeds,
+            now: props.now,
+            onRefresh: props.onLoadFeeds,
+            onAdd: props.onAddFeed,
+            onRun: props.onRunFeed,
+            onDelete: props.onDeleteFeed,
+            onAddMemo: props.onAddFeedMemo,
+          })
+          : !configured
+            ? h(InboxSetup, { onConnect: props.onConnect })
+            : selected
+              ? h('div', { className: 'pmw-inbox' },
+                h('div', { className: 'pmw-inbox-head' },
+                  h('button', {
+                    type: 'button',
+                    className: 'pmw-iconbtn',
+                    title: t('inbox_back'),
+                    onClick: () => setSelectedId(null),
+                  }, h(Icon, { name: 'back', size: 14 })),
+                  h('div', { className: 'pmw-inbox-head-main' },
+                    h('small', null, selected.from || t('inbox_from')),
+                  ),
+                ),
+                h('div', { className: 'pmw-mail-detail' },
+                  h('div', { className: 'pmw-mail-detail-head' },
+                    h('h3', null, selected.subject),
+                    h('div', { className: 'pmw-mail-detail-meta' },
+                      h('span', null, selected.from || t('inbox_from')),
+                      h('span', null, new Date(selected.date).toLocaleString('zh-CN')),
+                    ),
+                  ),
+                  h('div', { className: 'pmw-mail-body' }, selected.text || selected.preview || ''),
+                  h('div', { className: 'pmw-inbox-actions' },
+                    h('button', {
+                      type: 'button',
+                      className: 'pmw-btn is-primary',
+                      onClick: () => props.onAddMemo(selected),
+                    }, h(Icon, { name: 'note', size: 12 }), t('inbox_add_todo')),
+                  ),
+                  h('div', { className: 'pmw-mail-readonly' }, t('inbox_readonly')),
+                ),
+              )
+              : h('div', null,
+                h('div', { className: 'pmw-inbox-account' },
+                  h('span', { className: 'pmw-inbox-account-icon' }, h(Icon, { name: 'inbox', size: 14 })),
+                  h('div', { className: 'pmw-inbox-account-main' },
+                    h('b', null, status.email || t('inbox_title')),
+                    h('small', null, t('inbox_messages', { n: messages.length })),
+                  ),
+                  h('div', { className: 'pmw-inbox-account-actions' },
+                    h('button', {
+                      type: 'button',
+                      className: 'pmw-iconbtn',
+                      title: t('inbox_sync'),
+                      disabled: props.syncing,
+                      onClick: () => props.onSync(true),
+                    }, h(Icon, { name: 'refresh', size: 13 })),
+                    h('button', {
+                      type: 'button',
+                      className: 'pmw-iconbtn',
+                      title: t('inbox_disconnect'),
+                      onClick: props.onDisconnect,
+                    }, h(Icon, { name: 'close', size: 12 })),
+                  ),
+                ),
+                props.error ? h('div', { className: 'pmw-inbox-error' }, props.error) : null,
+                messages.length
+                  ? h('div', { className: 'pmw-inbox-list' }, messages.map((message) => h('button', {
+                    key: message.id,
+                    type: 'button',
+                    className: 'pmw-mail' + (message.unread ? ' is-unread' : ''),
+                    onClick: () => setSelectedId(message.id),
+                  },
+                  h('span', { className: 'pmw-mail-top' },
+                    message.unread ? h('span', { className: 'pmw-mail-unread-dot' }) : null,
+                    h('span', { className: 'pmw-mail-from', title: message.from || '' }, mailFromLabel(message.from) || t('inbox_from')),
+                    h('span', { className: 'pmw-mail-date' }, mailDateLabel(message.date, props.now)),
+                  ),
+                  h('span', { className: 'pmw-mail-subject' }, message.subject),
+                  h('span', { className: 'pmw-mail-preview' }, message.preview || ''),
+                  )))
+                  : h('div', { className: 'pmw-empty' },
+                    h(Icon, { name: 'inbox', size: 26 }),
+                    h('h4', null, props.syncing ? t('inbox_syncing') : t('inbox_empty')),
+                  ),
+              ),
       );
     }
     /* -------------------------------------------------------------- memos view */
@@ -4716,6 +5504,12 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
       const [selectedProjectId, setSelectedProjectId] = useState(() => (store.projects && store.projects[0] ? store.projects[0].id : null));
       const [inbox, setInbox] = useState({ status: null, messages: [], syncing: false, error: null, loaded: false });
       const [mailTodo, setMailTodo] = useState(null);
+      const [feeds, setFeeds] = useState({ subscriptions: [], items: [], loading: false, error: null, loaded: false });
+      const [knowledge, setKnowledge] = useState({ folders: [], maxFiles: 300, loading: false, error: null, loaded: false });
+      const [knowledgeOpen, setKnowledgeOpen] = useState(false);
+      const [knowledgeProjectId, setKnowledgeProjectId] = useState(null);
+      const [manualOpen, setManualOpen] = useState(false);
+      const [manualFolderId, setManualFolderId] = useState(null);
       const [inboxGuideClosed, setInboxGuideClosed] = useState(() => {
         try { return localStorage.getItem('dsh.pm-workbench.inbox.guide') === '1'; } catch (err) { return false; }
       });
@@ -5000,6 +5794,231 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
         }));
         setMailTodo(null);
         showToast(t('inbox_added'), { label: t('inbox_open_memo'), run: () => switchTab('memos') });
+      }
+
+      async function knowledgeRequest(payload) {
+        const response = await fetch('/pm-workbench/knowledge', {
+          method: payload ? 'POST' : 'GET',
+          headers: payload ? { 'content-type': 'application/json' } : undefined,
+          body: payload ? JSON.stringify(payload) : undefined,
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.ok === false) throw new Error(data.error || `HTTP ${response.status}`);
+        return data;
+      }
+
+      function applyKnowledge(data) {
+        setKnowledge({
+          folders: Array.isArray(data.folders) ? data.folders : [],
+          maxFiles: Number(data.maxFiles) || 300,
+          loading: false,
+          error: null,
+          loaded: true,
+        });
+      }
+
+      async function loadKnowledge() {
+        setKnowledge((current) => ({ ...current, loading: true, error: null }));
+        try {
+          applyKnowledge(await knowledgeRequest(null));
+        } catch (err) {
+          setKnowledge((current) => ({ ...current, loading: false, loaded: true, error: String(err.message || err) }));
+        }
+      }
+
+      function openKnowledge(projectId) {
+        setKnowledgeProjectId(projectId || null);
+        setKnowledgeOpen(true);
+        if (typeof loadKnowledge === 'function') loadKnowledge();
+      }
+
+      function openManual(folderId) {
+        setManualFolderId(folderId || null);
+        setManualOpen(true);
+        loadKnowledge();
+      }
+
+      async function addKnowledgeFolder() {
+        const service = clientCtx && typeof clientCtx.get === 'function' ? clientCtx.get('uiWorkspace') : null;
+        if (!service || typeof service.pickDirectory !== 'function') {
+          showToast(t('knowledge_picker_unavailable'), undefined, true);
+          return;
+        }
+        let path;
+        try {
+          path = await service.pickDirectory();
+        } catch (err) {
+          showToast(t('knowledge_add_failed', { message: String(err.message || err) }), undefined, true);
+          return;
+        }
+        if (!path) return;
+        setKnowledge((current) => ({ ...current, loading: true, error: null }));
+        try {
+          applyKnowledge(await knowledgeRequest({ action: 'add', path }));
+        } catch (err) {
+          setKnowledge((current) => ({ ...current, loading: false, error: String(err.message || err) }));
+          showToast(t('knowledge_add_failed', { message: String(err.message || err) }), undefined, true);
+        }
+      }
+
+      async function removeKnowledgeFolder(id) {
+        if (typeof window !== 'undefined' && typeof window.confirm === 'function'
+          && !window.confirm(t('knowledge_remove_confirm'))) return;
+        try {
+          applyKnowledge(await knowledgeRequest({ action: 'remove', id }));
+        } catch (err) {
+          showToast(String(err.message || err), undefined, true);
+        }
+      }
+
+      async function linkKnowledgeFolder(id, projectId, linked) {
+        try {
+          applyKnowledge(await knowledgeRequest({
+            action: linked ? 'link' : 'unlink',
+            id,
+            projectId,
+          }));
+        } catch (err) {
+          showToast(String(err.message || err), undefined, true);
+        }
+      }
+
+      function generateKnowledgeManual(payload) {
+        if (!payload || !payload.folder || !cleanString(payload.title, 160)
+          || !cleanString(payload.target, 2000) || !cleanString(payload.feature, 1000)) {
+          showToast(t('knowledge_manual_need'), undefined, true);
+          return;
+        }
+        const service = clientCtx && typeof clientCtx.get === 'function' ? clientCtx.get('uiWorkspace') : null;
+        if (!service || typeof service.startSession !== 'function') {
+          showToast(t('knowledge_manual_unavailable'), undefined, true);
+          return;
+        }
+        const folderPath = payload.folder.path;
+        const safeTitle = cleanString(payload.title, 120).replace(/[\\/:*?"<>|]/g, '-');
+        const type = payload.type === 'website' ? '网站' : '软件';
+        const target = cleanString(payload.target, 2000);
+        const feature = cleanString(payload.feature, 1000);
+        const prompt = [
+          '请为知识库生成一份“某个功能”的操作手册，并使用 computer use 工具自动截图。',
+          '',
+          `目标类型：${type}`,
+          `目标：${target}`,
+          `要记录的功能：${feature}`,
+          `归档目录：${folderPath}`,
+          '',
+          '执行要求：',
+          type === '软件'
+            ? '1. 先用 windows_computer_use_list_windows 找到与目标名称匹配的窗口；用 accessibility_tree / snapshot 识别功能入口。不要操作其他无关窗口。'
+            : '1. 用浏览器打开目标网址，优先使用新的浏览器标签；不要操作已有的用户登录标签，除非任务明确需要。用 browserTab / accessibility_tree 识别功能入口。',
+          '2. 围绕“要记录的功能”完成操作；每完成一个关键步骤，截一张图。优先使用 mcp__wincu__windows_computer_use_screenshot 或 windows_computer_use_snapshot，按窗口/页面截取功能区域，不需要用户提供坐标。',
+          `3. 把截图保存到 ${folderPath} 下的 images 目录，按 01、02、03 编号。`,
+          `4. 生成 Markdown 文件：${folderPath}\\${safeTitle}.md，包含标题、适用场景、前置条件、分步操作、每步截图相对路径、注意事项。`,
+          '5. 如果找不到目标窗口/页面、computer use 工具不可用或无法安全操作，请停止并说明原因，不要伪造截图。',
+        ].join('\n');
+        try {
+          service.startSession(undefined, { prompt, whenDraftExists: 'append' });
+          setKnowledgeOpen(false);
+          setManualOpen(false);
+          showToast(t('knowledge_manual_created'));
+        } catch (err) {
+          showToast(String(err.message || err), undefined, true);
+        }
+      }
+
+      async function feedsRequest(payload) {
+        const response = await fetch('/pm-workbench/feeds', {
+          method: payload ? 'POST' : 'GET',
+          headers: payload ? { 'content-type': 'application/json' } : undefined,
+          body: payload ? JSON.stringify(payload) : undefined,
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.ok === false) throw new Error(data.error || `HTTP ${response.status}`);
+        return data;
+      }
+
+      async function loadFeeds() {
+        setFeeds((current) => ({ ...current, loading: true, error: null }));
+        try {
+          const data = await feedsRequest(null);
+          setFeeds({
+            subscriptions: Array.isArray(data.subscriptions) ? data.subscriptions : [],
+            items: Array.isArray(data.items) ? data.items : [],
+            loading: false,
+            error: null,
+            loaded: true,
+          });
+        } catch (err) {
+          setFeeds((current) => ({ ...current, loading: false, loaded: true, error: String(err.message || err) }));
+        }
+      }
+
+      async function addFeed(value, name, type) {
+        try {
+          const data = await feedsRequest({ action: 'add', value, name, type });
+          setFeeds({
+            subscriptions: Array.isArray(data.subscriptions) ? data.subscriptions : [],
+            items: Array.isArray(data.items) ? data.items : [],
+            loading: false,
+            error: null,
+            loaded: true,
+          });
+          return {};
+        } catch (err) {
+          return { error: String(err.message || err) };
+        }
+      }
+
+      async function deleteFeed(id) {
+        if (typeof window !== 'undefined' && typeof window.confirm === 'function'
+          && !window.confirm(t('feeds_delete_confirm'))) return;
+        try {
+          const data = await feedsRequest({ action: 'delete', id });
+          setFeeds((current) => ({ ...current, subscriptions: data.subscriptions || [], items: data.items || [] }));
+        } catch (err) {
+          setFeeds((current) => ({ ...current, error: String(err.message || err) }));
+        }
+      }
+
+      async function runFeed(id) {
+        setFeeds((current) => ({ ...current, loading: true, error: null }));
+        try {
+          const data = await feedsRequest({ action: 'run', id });
+          setFeeds({
+            subscriptions: Array.isArray(data.subscriptions) ? data.subscriptions : [],
+            items: Array.isArray(data.items) ? data.items : [],
+            loading: false,
+            error: null,
+            loaded: true,
+          });
+        } catch (err) {
+          setFeeds((current) => ({ ...current, loading: false, error: String(err.message || err) }));
+        }
+      }
+
+      function addFeedToMemo(item) {
+        if (!item) return;
+        const memo = normalizeMemo({
+          text: item.title || item.url || t('inbox_channel_feeds'),
+          note: item.summary || item.snippet || '',
+          tags: ['订阅'],
+          origin: {
+            kind: 'web',
+            label: t('inbox_channel_feeds'),
+            url: item.url || '',
+            title: item.title || '',
+            publishedAt: item.publishedAt || '',
+            subscriptionName: item.subscriptionName || '',
+            keyword: item.keyword || '',
+          },
+        });
+        if (!memo) return;
+        setStore((current) => ({
+          ...current,
+          memos: [memo].concat(current.memos),
+          tagOptions: normalizeTagList((current.tagOptions || DEFAULT_TAGS).concat(['订阅']), true),
+        }));
+        showToast(t('feeds_added'), { label: t('inbox_open_memo'), run: () => switchTab('memos') });
       }
 
       function openProjectFromMemo(memo) {
@@ -5328,18 +6347,34 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
                 h('span', null, `${t('week_progress')} ${ringStats.done.length}/${ringTotal}`),
               ),
             ),
+            h('div', { className: 'pmw-hero-actions' },
+              h('button', {
+                type: 'button',
+                className: 'pmw-hero-action pmw-hero-knowledge',
+                title: t('knowledge'),
+                'aria-label': t('knowledge'),
+                onClick: () => openKnowledge(null),
+              }, h(Icon, { name: 'book', size: 15 })),
+              h('button', {
+                type: 'button',
+                className: 'pmw-hero-action',
+                title: `${t('knowledge_manual')} · ${t('manual_dependency_title')}`,
+                'aria-label': t('knowledge_manual'),
+                onClick: () => openManual(null),
+              }, h(Icon, { name: 'sparkles', size: 15 })),
+              h('button', {
+                type: 'button',
+                className: 'pmw-hero-action',
+                'aria-label': t('more_actions'),
+                'aria-expanded': menuOpen,
+                onClick: () => setMenuOpen((open) => !open),
+              }, h(Icon, { name: 'more', size: 15 })),
+            ),
             h(Ring, {
               rate: ringRate,
               label: `${ringStats.done.length}/${ringTotal}`,
               sub: t('stat_done'),
             }),
-            h('button', {
-              type: 'button',
-              className: 'pmw-hero-menu',
-              'aria-label': t('more_actions'),
-              'aria-expanded': menuOpen,
-              onClick: () => setMenuOpen((open) => !open),
-            }, h(Icon, { name: 'more', size: 15 })),
           ),
         ),
 
@@ -5448,6 +6483,8 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
                   onEditTask: (project, task) => setTaskSheet({ projectId: project.id, project, task }),
                   onReorderTasks: reorderProjectTasks,
                   onRepairDependencies: repairProjectDependencyDates,
+                  knowledge,
+                  onOpenKnowledge: openKnowledge,
                 })
                 : tab === 'inbox'
                   ? h(InboxView, {
@@ -5460,6 +6497,12 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
                     onSync: syncInbox,
                     onDisconnect: disconnectInbox,
                     onAddMemo: openMailTodo,
+                    feeds,
+                    onLoadFeeds: loadFeeds,
+                    onAddFeed: addFeed,
+                    onRunFeed: runFeed,
+                    onDeleteFeed: deleteFeed,
+                    onAddFeedMemo: addFeedToMemo,
                   })
                   : h(WeeklyView, {
                 now,
@@ -5546,6 +6589,32 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           message: mailTodo,
           onClose: () => setMailTodo(null),
           onSave: saveMailTodo,
+        }),
+
+        h(KnowledgeSheet, {
+          open: knowledgeOpen,
+          folders: knowledge.folders,
+          maxFiles: knowledge.maxFiles,
+          loading: knowledge.loading,
+          error: knowledge.error,
+          projects: store.projects,
+          projectId: knowledgeProjectId,
+          onClose: () => setKnowledgeOpen(false),
+          onAdd: addKnowledgeFolder,
+          onRefresh: loadKnowledge,
+          onRemove: removeKnowledgeFolder,
+          onLink: linkKnowledgeFolder,
+          onOpenManual: openManual,
+        }),
+
+        h(ManualSheet, {
+          open: manualOpen,
+          folders: knowledge.folders,
+          defaultFolderId: manualFolderId,
+          loading: knowledge.loading,
+          onClose: () => setManualOpen(false),
+          onOpenKnowledge: () => { setManualOpen(false); openKnowledge(null); },
+          onGenerate: generateKnowledgeManual,
         }),
 
         h('input', {
@@ -5638,7 +6707,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
           endOfWeek,
           parseYmd,
           dueSummary,
-          components: { Workbench, Composer, MemoItem, MemosView, CalendarView, WeeklyView, AISheet, ProjectsView, ProjectSheet, TaskSheet, InboxView, InboxSetup, MailTodoSheet },
+          components: { Workbench, Composer, MemoItem, MemosView, CalendarView, WeeklyView, AISheet, ProjectsView, ProjectSheet, TaskSheet, InboxView, InboxSetup, MailTodoSheet, FeedsPanel, KnowledgeSheet, ManualSheet },
         });
       } catch (err) {
         /* the test seam must never break the plugin */
@@ -5648,6 +6717,7 @@ body[data-ds-dark-theme] .pmw-toast{background:#161122}
     return {
       inject: ['slots', 'sidebarRight', 'sidebarRightTabs'],
       apply(ctx) {
+        clientCtx = ctx;
         noteState({ boot: true, tabType: !!ctx.sidebarRightTabs });
 
         attempt('bind-open', () => { openWorkbench = () => ctx.sidebarRight.openTab(KIND); });
