@@ -19,10 +19,14 @@
 import { loadState, saveState } from './store.js';
 import { createTools } from './tools.js';
 import { disconnectInbox, getInboxStatus, saveInboxConfig, syncInbox } from './inbox.js';
+import { addFeed, deleteFeed, getFeeds, runFeed, startFeedScheduler, updateFeed } from './feeds.js';
+import { addKnowledgeFolder, getKnowledge, linkKnowledgeFolder, refreshKnowledge, removeKnowledgeFolder } from './knowledge.js';
 
 const ROUTE = '/pm-workbench/ai';
 const DATA_ROUTE = '/pm-workbench/data';
 const INBOX_ROUTE = '/pm-workbench/inbox';
+const FEEDS_ROUTE = '/pm-workbench/feeds';
+const KNOWLEDGE_ROUTE = '/pm-workbench/knowledge';
 const BODY_LIMIT = 256 * 1024;
 const DATA_BODY_LIMIT = 1024 * 1024;
 const MODEL_TIMEOUT_MS = 45_000;
@@ -39,6 +43,9 @@ export function apply(ctx) {
   registerRoute(ctx, server, ROUTE, handle);
   registerRoute(ctx, server, DATA_ROUTE, handleData);
   registerRoute(ctx, server, INBOX_ROUTE, handleInbox);
+  registerRoute(ctx, server, FEEDS_ROUTE, handleFeeds);
+  registerRoute(ctx, server, KNOWLEDGE_ROUTE, handleKnowledge);
+  startFeedScheduler(ctx);
   registerTools(ctx);
   registerPrompt(ctx);
 }
@@ -249,6 +256,96 @@ async function handleInbox(ctx, req, res) {
     const message = String((err && err.message) || err);
     const code = /授权码|登录|AUTH|LOGIN|invalid credentials/i.test(message) ? 'auth' : 'inbox';
     fail(res, 400, message, code);
+  }
+}
+
+async function handleFeeds(ctx, req, res) {
+  if (refuseUnadmitted(ctx, req, res)) return;
+  if (req.method === 'OPTIONS') { head(res, 204); return; }
+  if (req.method === 'GET') {
+    try {
+      sendJson(res, 200, { ok: true, ...getFeeds() });
+    } catch (err) {
+      fail(res, 500, String((err && err.message) || err), 'feeds-status');
+    }
+    return;
+  }
+  if (req.method !== 'POST') { fail(res, 405, 'method-not-allowed', 'method'); return; }
+  let payload;
+  try {
+    payload = JSON.parse(await readBody(req, BODY_LIMIT));
+  } catch (err) {
+    fail(res, 400, 'invalid-json', 'bad-request');
+    return;
+  }
+  try {
+    const action = payload && payload.action;
+    if (action === 'add') {
+      const result = addFeed(ctx, payload);
+      sendJson(res, 200, { ok: true, ...result });
+      return;
+    }
+    if (action === 'update') {
+      const result = updateFeed(ctx, payload);
+      sendJson(res, 200, { ok: true, ...result });
+      return;
+    }
+    if (action === 'delete') {
+      const result = deleteFeed(ctx, payload);
+      sendJson(res, 200, { ok: true, ...result });
+      return;
+    }
+    if (action === 'run') {
+      const result = await runFeed(ctx, payload.id);
+      sendJson(res, 200, { ok: true, ...result });
+      return;
+    }
+    fail(res, 400, 'unknown-action', 'bad-request');
+  } catch (err) {
+    fail(res, 400, String((err && err.message) || err), 'feeds');
+  }
+}
+
+async function handleKnowledge(ctx, req, res) {
+  if (refuseUnadmitted(ctx, req, res)) return;
+  if (req.method === 'OPTIONS') { head(res, 204); return; }
+  if (req.method === 'GET') {
+    try {
+      sendJson(res, 200, { ok: true, ...getKnowledge() });
+    } catch (err) {
+      fail(res, 500, String((err && err.message) || err), 'knowledge-status');
+    }
+    return;
+  }
+  if (req.method !== 'POST') { fail(res, 405, 'method-not-allowed', 'method'); return; }
+  let payload;
+  try {
+    payload = JSON.parse(await readBody(req, BODY_LIMIT));
+  } catch (err) {
+    fail(res, 400, 'invalid-json', 'bad-request');
+    return;
+  }
+  try {
+    const action = payload && payload.action;
+    if (action === 'add') {
+      sendJson(res, 200, { ok: true, ...addKnowledgeFolder(ctx, payload) });
+      return;
+    }
+    if (action === 'remove') {
+      sendJson(res, 200, { ok: true, ...removeKnowledgeFolder(ctx, payload) });
+      return;
+    }
+    if (action === 'link' || action === 'unlink') {
+      sendJson(res, 200, { ok: true, ...linkKnowledgeFolder(ctx, payload) });
+      return;
+    }
+    if (action === 'refresh') {
+      sendJson(res, 200, { ok: true, ...refreshKnowledge() });
+      return;
+    }
+    fail(res, 400, 'unknown-action', 'bad-request');
+  } catch (err) {
+    fail(res, 400, String((err && err.message) || err), 'knowledge');
   }
 }
 
