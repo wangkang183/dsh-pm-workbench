@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -16,6 +16,13 @@ const { getInboxStatus, saveInboxConfig } = await import('../inbox.js');
 const handlers = {};
 const streamCalls = [];
 let gateStatus;
+let pageHtml = '<html><head><title>产品更新</title></head><body><nav><a href="/about">关于我们</a><a href="/login">登录</a></nav><main><a href="/articles/1">第一篇文章标题</a><a href="/articles/2">第二篇文章标题</a></main></body></html>';
+let wechatArticles = [{
+  url: 'https://mp.weixin.qq.com/s?__biz=abc&mid=1',
+  title: '公众号旧文章',
+  snippet: '旧文摘要。',
+  publishedAt: '2026-11-18T08:00:00.000Z',
+}];
 
 const ctx = {
   effect: (fn) => fn(),
@@ -25,6 +32,37 @@ const ctx = {
     }
     if (name === 'connection') {
       return { requestRejection: () => gateStatus };
+    }
+    if (name === 'web') {
+      return {
+        async search(request) {
+          if (request && String(request.query).includes('site:mp.weixin.qq.com')) {
+            return { sources: wechatArticles, truncated: false };
+          }
+          return {
+            sources: [{
+              url: 'https://example.com/ai-pm-old',
+              title: 'AI 产品经理的旧消息',
+              snippet: '旧消息。',
+              publishedAt: '2026-11-18T08:00:00.000Z',
+            }, {
+              url: 'https://example.com/ai-pm',
+              title: 'AI 产品经理的职责',
+              snippet: 'AI 产品经理需要懂模型能力边界。',
+              publishedAt: '2026-11-19T08:00:00.000Z',
+            }],
+            truncated: false,
+          };
+        },
+        async fetch() {
+          return {
+            url: 'https://example.com/product',
+            statusCode: 200,
+            body: { kind: 'html', content: pageHtml },
+            truncated: false,
+          };
+        },
+      };
     }
     if (name === 'agentDefaultModel') {
       return { currentSelection: () => ({ provider: 'fake-provider', model: 'fake-model' }) };
@@ -67,6 +105,8 @@ apply(ctx);
 assert.equal(typeof handlers['/pm-workbench/ai'], 'function', 'AI route registered');
 assert.equal(typeof handlers['/pm-workbench/data'], 'function', 'data route registered');
 assert.equal(typeof handlers['/pm-workbench/inbox'], 'function', 'inbox route registered');
+assert.equal(typeof handlers['/pm-workbench/feeds'], 'function', 'feeds route registered');
+assert.equal(typeof handlers['/pm-workbench/knowledge'], 'function', 'knowledge route registered');
 
 function request(method, payload) {
   const req = new EventEmitter();
@@ -108,6 +148,84 @@ assert.equal(inboxStatusRoute.json.configured, false);
 const inboxSyncRoute = await call('/pm-workbench/inbox', 'POST', { action: 'sync' });
 assert.equal(inboxSyncRoute.status, 400);
 assert.match(inboxSyncRoute.json.error, /还没有配置/);
+
+const feedsEmpty = await call('/pm-workbench/feeds', 'GET');
+assert.equal(feedsEmpty.status, 200);
+assert.deepEqual(feedsEmpty.json.subscriptions, []);
+const feedAdded = await call('/pm-workbench/feeds', 'POST', { action: 'add', value: 'AI 产品经理' });
+assert.equal(feedAdded.status, 200);
+assert.equal(feedAdded.json.subscriptions.length, 1);
+assert.equal(feedAdded.json.subscriptions[0].value, 'AI 产品经理');
+const feedId = feedAdded.json.subscriptions[0].id;
+const feedRun = await call('/pm-workbench/feeds', 'POST', { action: 'run', id: feedId });
+assert.equal(feedRun.status, 200);
+assert.equal(feedRun.json.items.length, 2);
+assert.equal(feedRun.json.items[0].title, 'AI 产品经理的职责');
+assert.equal(feedRun.json.items[1].title, 'AI 产品经理的旧消息');
+
+const urlAdded = await call('/pm-workbench/feeds', 'POST', {
+  action: 'add',
+  type: 'url',
+  value: 'https://example.com/product',
+});
+assert.equal(urlAdded.status, 200);
+const urlId = urlAdded.json.subscriptions.find((feed) => feed.type === 'url').id;
+const urlBaseline = await call('/pm-workbench/feeds', 'POST', { action: 'run', id: urlId });
+assert.equal(urlBaseline.status, 200);
+assert.equal(urlBaseline.json.items.length, 2, 'first fetch only establishes a baseline');
+const urlFeed = urlBaseline.json.subscriptions.find((feed) => feed.id === urlId);
+assert.equal(urlFeed.lastLinks.length, 2);
+pageHtml = '<html><head><title>产品更新</title></head><body><nav><a href="/about">关于我们</a><a href="/login">登录</a></nav><main><a href="/articles/1">第一篇文章标题</a><a href="/articles/2">第二篇文章标题</a><a href="/articles/3">第三篇文章标题</a></main></body></html>';
+const urlChanged = await call('/pm-workbench/feeds', 'POST', { action: 'run', id: urlId });
+assert.equal(urlChanged.status, 200);
+assert.equal(urlChanged.json.items.length, 3);
+assert.equal(urlChanged.json.items[0].source, 'web-page');
+assert.equal(urlChanged.json.items[0].title, '第三篇文章标题');
+assert.equal(urlChanged.json.items[0].url, 'https://example.com/articles/3');
+const navOnly = await call('/pm-workbench/feeds', 'POST', { action: 'run', id: urlId });
+assert.equal(navOnly.status, 200);
+assert.equal(navOnly.json.items.length, 3, 'navigation changes do not create messages');
+
+const wechatAdded = await call('/pm-workbench/feeds', 'POST', {
+  action: 'add',
+  type: 'wechat',
+  value: '机器之心',
+});
+assert.equal(wechatAdded.status, 200);
+const wechatId = wechatAdded.json.subscriptions.find((feed) => feed.type === 'wechat').id;
+const wechatBaseline = await call('/pm-workbench/feeds', 'POST', { action: 'run', id: wechatId });
+assert.equal(wechatBaseline.status, 200);
+assert.equal(wechatBaseline.json.items.length, 3, 'first WeChat search is a baseline');
+wechatArticles = [{
+  url: 'https://mp.weixin.qq.com/s?__biz=abc&mid=2',
+  title: '公众号新文章',
+  snippet: '新文摘要。',
+  publishedAt: '2026-11-20T08:00:00.000Z',
+}, ...wechatArticles];
+const wechatChanged = await call('/pm-workbench/feeds', 'POST', { action: 'run', id: wechatId });
+assert.equal(wechatChanged.status, 200);
+assert.equal(wechatChanged.json.items.length, 4);
+const wechatItem = wechatChanged.json.items.find((item) => item.source === 'wechat-search');
+assert.equal(wechatItem.title, '公众号新文章');
+
+const knowledgeDir = join(home, 'knowledge-folder');
+mkdirSync(knowledgeDir, { recursive: true });
+writeFileSync(join(knowledgeDir, 'brief.md'), '# 项目材料\n', 'utf8');
+writeFileSync(join(knowledgeDir, 'report.txt'), 'report', 'utf8');
+const knowledgeDefault = await call('/pm-workbench/knowledge', 'GET');
+assert.equal(knowledgeDefault.status, 200);
+assert.equal(knowledgeDefault.json.folders.length, 1);
+assert.equal(knowledgeDefault.json.folders[0].name, '默认手册');
+const knowledgeAdded = await call('/pm-workbench/knowledge', 'POST', { action: 'add', path: knowledgeDir });
+assert.equal(knowledgeAdded.status, 200);
+assert.equal(knowledgeAdded.json.folder.fileCount, 2);
+const knowledgeId = knowledgeAdded.json.folder.id;
+const knowledgeLinked = await call('/pm-workbench/knowledge', 'POST', { action: 'link', id: knowledgeId, projectId: 'p-test' });
+assert.equal(knowledgeLinked.status, 200);
+assert.deepEqual(knowledgeLinked.json.folders[0].projectIds, ['p-test']);
+const knowledgeUnlinked = await call('/pm-workbench/knowledge', 'POST', { action: 'unlink', id: knowledgeId, projectId: 'p-test' });
+assert.equal(knowledgeUnlinked.status, 200);
+assert.deepEqual(knowledgeUnlinked.json.folders[0].projectIds, []);
 
 const summary = await call('/pm-workbench/ai', 'POST', {
   task: 'summary',
@@ -202,6 +320,20 @@ assert.equal(mailDraft.text, '周会材料');
 assert.ok(mailDraft.note.includes('小王'));
 assert.ok(mailDraft.note.includes('验收标准'));
 assert.deepEqual(mailDraft.tags, ['邮件']);
+const mailMemo = normalizeMemo({
+  text: '回复周会材料',
+  origin: {
+    kind: 'email',
+    channel: 'qq-mail',
+    label: 'QQ 邮箱',
+    from: '小王 <wang@example.com>',
+    subject: '周会材料',
+    date: '2026-11-17T06:00:00.000Z',
+    messageId: '42',
+  },
+});
+assert.equal(mailMemo.origin.kind, 'email');
+assert.equal(mailMemo.origin.from, '小王 <wang@example.com>');
 const inboxStatus = await getInboxStatus(ctx);
 assert.equal(inboxStatus.configured, false);
 await assert.rejects(() => saveInboxConfig(ctx, { email: 'bad', authCode: '123456' }), /邮箱地址/);
