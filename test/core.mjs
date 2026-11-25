@@ -96,6 +96,13 @@ assert.equal(nm.dueDate, null);
 assert.equal(nm.dueTime, null);
 const nmNote = normalizeMemo({ text: 'x', note: '第一行\n第二行' });
 assert.equal(nmNote.note, '第一行\n第二行');
+const mailMemo = normalizeMemo({
+  text: '回复邮件',
+  origin: { kind: 'email', channel: 'qq-mail', label: 'QQ 邮箱', from: 'a@qq.com', subject: '周会', date: '2026-11-18T06:00:00.000Z', messageId: '42' },
+});
+assert.equal(mailMemo.origin.kind, 'email');
+assert.equal(mailMemo.origin.from, 'a@qq.com');
+assert.equal(mailMemo.origin.messageId, '42');
 
 // --- daily recurrence -----------------------------------------------------
 const dailyOpen = normalizeMemo({
