@@ -57,6 +57,8 @@ function memoLine(memo) {
   if (memo.repeat === 'daily') bits.push('每天');
   if (memo.origin && memo.origin.kind === 'email') {
     bits.push(`来源=邮件${memo.origin.from ? ':' + oneLine(memo.origin.from, 80) : ''}`);
+  } else if (memo.origin && memo.origin.kind === 'web') {
+    bits.push(`来源=订阅${memo.origin.keyword ? ':' + oneLine(memo.origin.keyword, 80) : ''}`);
   }
   const due = dueText(memo);
   if (due) bits.push(`截止=${due}`);

@@ -61,16 +61,30 @@ export function isTimeText(value) {
 }
 
 export function normalizeOrigin(raw) {
-  if (!raw || typeof raw !== 'object' || raw.kind !== 'email') return null;
-  return {
-    kind: 'email',
-    channel: text(raw.channel, 40) || 'qq-mail',
-    label: text(raw.label, 80) || 'QQ 邮箱',
-    from: text(raw.from, 300),
-    subject: text(raw.subject, 300),
-    date: text(raw.date, 40),
-    messageId: text(raw.messageId, 100),
-  };
+  if (!raw || typeof raw !== 'object') return null;
+  if (raw.kind === 'email') {
+    return {
+      kind: 'email',
+      channel: text(raw.channel, 40) || 'qq-mail',
+      label: text(raw.label, 80) || 'QQ 邮箱',
+      from: text(raw.from, 300),
+      subject: text(raw.subject, 300),
+      date: text(raw.date, 40),
+      messageId: text(raw.messageId, 100),
+    };
+  }
+  if (raw.kind === 'web') {
+    return {
+      kind: 'web',
+      label: text(raw.label, 80) || '信息订阅',
+      url: text(raw.url, 1000),
+      title: text(raw.title, 300),
+      publishedAt: text(raw.publishedAt, 40),
+      subscriptionName: text(raw.subscriptionName, 100),
+      keyword: text(raw.keyword, 300),
+    };
+  }
+  return null;
 }
 
 export function normalizeMemo(raw) {
