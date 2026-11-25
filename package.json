@@ -1,10 +1,10 @@
 {
   "name": "dsh-common-workbench",
-  "version": "2.5.2",
+  "version": "2.10.6",
   "type": "module",
   "license": "MIT",
   "author": "kieran.wang (https://github.com/wangkang183)",
-  "description": "A right-sidebar workbench for DeepSeek Harness: memos, projects with Gantt, a read-only QQ Mail inbox, calendar, AI item parsing, weekly digest, and host tools for conversational and WeChat todo management.",
+  "description": "A right-sidebar workbench for DeepSeek Harness: memos, projects with Gantt, a read-only QQ Mail inbox, hourly keyword feeds, calendar, AI item parsing, weekly digest, and host tools for conversational and WeChat todo management.",
   "keywords": [
     "dsh-plugin",
     "deepseek-harness",
@@ -13,7 +13,8 @@
     "memo",
     "project",
     "inbox",
-    "qq-mail"
+    "qq-mail",
+    "feeds"
   ],
   "repository": {
     "type": "git",
@@ -39,6 +40,8 @@
     "store.js",
     "tools.js",
     "inbox.js",
+    "feeds.js",
+    "knowledge.js",
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",
